@@ -1,4 +1,4 @@
-#!/bin/bash
+﻿#!/bin/bash
 set -e
 
 banner() {
@@ -7,10 +7,10 @@ banner() {
     echo "========================================"
 }
 
-banner "ROS 2 Jazzy install start"
+banner "ROS 2 Jazzy 설치 시작"
 
 echo ""
-echo "[1/8] Configure locale"
+echo "[1/8] 로케일 설정"
 sudo apt update
 sudo apt install -y locales
 sudo locale-gen en_US en_US.UTF-8
@@ -18,15 +18,15 @@ sudo update-locale LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8
 export LANG=en_US.UTF-8
 
 echo ""
-echo "[2/8] Install prerequisites"
+echo "[2/8] 필수 패키지 설치"
 sudo apt install -y software-properties-common curl gnupg lsb-release python3-pip python3-venv python3-colcon-common-extensions
 
 echo ""
-echo "[3/8] Enable Ubuntu universe repository"
+echo "[3/8] Ubuntu universe 저장소 활성화"
 sudo add-apt-repository universe -y
 
 echo ""
-echo "[4/8] Install ROS 2 apt source"
+echo "[4/8] ROS 2 apt source 설치"
 sudo apt update
 ROS_APT_SOURCE_VERSION=$(curl -s https://api.github.com/repos/ros-infrastructure/ros-apt-source/releases/latest \
   | grep -F "tag_name" \
@@ -40,37 +40,37 @@ curl -L -o /tmp/ros2-apt-source.deb \
 sudo dpkg -i /tmp/ros2-apt-source.deb
 
 echo ""
-echo "[5/8] Install ROS development tools"
+echo "[5/8] ROS 개발 도구 설치"
 sudo apt update
 sudo apt install -y ros-dev-tools
 
 echo ""
-echo "[6/8] Install ROS 2 Jazzy Desktop"
+echo "[6/8] ROS 2 Jazzy Desktop 설치"
 sudo apt update
 sudo apt upgrade -y
 sudo apt install -y ros-jazzy-desktop
 
 echo ""
-echo "[7/8] Initialize and update rosdep"
+echo "[7/8] rosdep 초기화 및 업데이트"
 if [ ! -f /etc/ros/rosdep/sources.list.d/20-default.list ]; then
     sudo rosdep init
 else
-    echo "rosdep already initialized"
+    echo "rosdep은 이미 초기화되어 있습니다."
 fi
 rosdep update
 
 echo ""
-echo "[8/8] Add ROS environment setup to bashrc"
+echo "[8/8] bashrc에 ROS 환경 설정 추가"
 if ! grep -q "source /opt/ros/jazzy/setup.bash" ~/.bashrc; then
     echo "source /opt/ros/jazzy/setup.bash" >> ~/.bashrc
 fi
 
 source /opt/ros/jazzy/setup.bash
 
-banner "ROS 2 Jazzy install complete"
+banner "ROS 2 Jazzy 설치 완료"
 
 echo ""
-echo "Verification commands:"
+echo "확인 명령어:"
 echo "  ros2 --version"
 echo "  ros2 run demo_nodes_cpp talker"
 echo "  ros2 run demo_nodes_py listener"

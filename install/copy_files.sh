@@ -1,46 +1,50 @@
-#!/bin/bash
+﻿#!/bin/bash
 set -e
 
-banner() {
-    echo "========================================"
-    echo "$1"
-    echo "========================================"
-}
-
-current_user="$(id -un)"
-current_home="$HOME"
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+desktop_src_dir="$(cd "$script_dir/../desktop" && pwd)"
+autostart_dir="$HOME/.config/autostart"
+desktop_dir="$HOME/Desktop"
+current_home="$HOME"
 
-banner "Desktop shortcut setup start"
+echo "========================================"
+echo "바로가기 복사 시작"
+echo "========================================"
 
-echo ""
-echo "[1/5] Create autostart directory"
-mkdir -p ~/.config/autostart
+mkdir -p "$autostart_dir"
+mkdir -p "$desktop_dir"
 
-echo ""
-echo "[2/5] Create Desktop directory"
-mkdir -p ~/Desktop
+for file in htop.desktop nvidia-smi.desktop; do
+    src="$desktop_src_dir/$file"
+    dst="$autostart_dir/$file"
 
-echo ""
-echo "[3/5] Copy NVIDIA-SMI and CPU-USAGE to autostart"
-cp "$script_dir/NVIDIA-SMI.desktop" ~/.config/autostart/
-cp "$script_dir/CPU-USAGE.desktop" ~/.config/autostart/
+    if [ ! -f "$src" ]; then
+        echo "파일을 찾을 수 없습니다: $src"
+        exit 1
+    fi
 
-echo ""
-echo "[4/5] Copy desktop launchers"
-cp "$script_dir/NVIDIA-SMI.desktop" ~/Desktop/
-cp "$script_dir/CPU-USAGE.desktop" ~/Desktop/
+    cp "$src" "$dst"
+    chmod +x "$dst"
+done
+
+for file in htop.desktop nvidia-smi.desktop code.desktop google-chrome.desktop xfce4-terminal-emulator.desktop; do
+    src="$desktop_src_dir/$file"
+    dst="$desktop_dir/$file"
+
+    if [ ! -f "$src" ]; then
+        echo "파일을 찾을 수 없습니다: $src"
+        exit 1
+    fi
+
+    cp "$src" "$dst"
+    chmod +x "$dst"
+done
+
 sed \
     -e "s|__HOME__|$current_home|g" \
-    -e "s|__USER__|$current_user|g" \
-    "$script_dir/IsaacSim.desktop" > ~/Desktop/IsaacSim.desktop
+    "$desktop_src_dir/isaac-sim.desktop" > "$desktop_dir/isaac-sim.desktop"
+chmod +x "$desktop_dir/isaac-sim.desktop"
 
-echo ""
-echo "[5/5] Make launchers executable"
-chmod +x ~/.config/autostart/NVIDIA-SMI.desktop
-chmod +x ~/.config/autostart/CPU-USAGE.desktop
-chmod +x ~/Desktop/NVIDIA-SMI.desktop
-chmod +x ~/Desktop/CPU-USAGE.desktop
-chmod +x ~/Desktop/IsaacSim.desktop
-
-banner "Desktop shortcut setup complete"
+echo "========================================"
+echo "바로가기 복사 완료"
+echo "========================================"

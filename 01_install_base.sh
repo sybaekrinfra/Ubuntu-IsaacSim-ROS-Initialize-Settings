@@ -1,4 +1,4 @@
-#!/bin/bash
+﻿#!/bin/bash
 set -e
 
 banner() {
@@ -7,15 +7,15 @@ banner() {
     echo "========================================"
 }
 
-banner "Base + NVIDIA Driver setup start"
+banner "기본 시스템 및 NVIDIA 드라이버 설치 시작"
 
 echo ""
-echo "[1/4] Update apt and upgrade packages"
+echo "[1/4] apt 업데이트 및 패키지 업그레이드"
 sudo apt update
 sudo apt upgrade -y
 
 echo ""
-echo "[2/4] Install base packages"
+echo "[2/4] 기본 패키지 설치"
 sudo apt install -y \
     build-essential \
     linux-tools-common \
@@ -30,14 +30,14 @@ sudo apt install -y \
     curl
 
 echo ""
-echo "[3/4] Set CPU governor to performance"
+echo "[3/4] CPU 성능 모드로 설정"
 sudo cpupower frequency-set -g performance || true
 
 echo ""
-echo "[4/4] Install NVIDIA driver"
+echo "[4/4] NVIDIA 드라이버 설치"
 ubuntu-drivers devices
 sudo apt update
 sudo apt install -y nvidia-driver-580
 
-banner "Base install complete. Rebooting now."
+banner "기본 설치 완료. 이제 재부팅합니다."
 sudo reboot
