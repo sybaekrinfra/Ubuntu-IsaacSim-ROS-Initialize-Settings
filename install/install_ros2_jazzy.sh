@@ -19,7 +19,7 @@ export LANG=en_US.UTF-8
 
 echo ""
 echo "[2/8] 필수 패키지 설치"
-sudo apt install -y software-properties-common curl gnupg lsb-release python3-pip python3-venv python3-colcon-common-extensions
+sudo apt install -y software-properties-common curl gnupg lsb-release python3-pip python3-venv
 
 echo ""
 echo "[3/8] Ubuntu universe 저장소 활성화"
@@ -43,6 +43,7 @@ echo ""
 echo "[5/8] ROS 개발 도구 설치"
 sudo apt update
 sudo apt install -y ros-dev-tools
+sudo apt install -y python3-colcon-common-extensions
 
 echo ""
 echo "[6/8] ROS 2 Jazzy Desktop 설치"
