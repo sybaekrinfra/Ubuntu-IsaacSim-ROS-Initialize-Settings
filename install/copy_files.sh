@@ -14,6 +14,13 @@ echo "========================================"
 mkdir -p "$autostart_dir"
 mkdir -p "$desktop_dir"
 
+copy_with_exec() {
+    local src="$1"
+    local dst="$2"
+
+    install -m 755 "$src" "$dst"
+}
+
 for file in htop.desktop nvidia-smi.desktop; do
     src="$desktop_src_dir/$file"
     dst="$autostart_dir/$file"
@@ -23,8 +30,7 @@ for file in htop.desktop nvidia-smi.desktop; do
         exit 1
     fi
 
-    cp "$src" "$dst"
-    chmod +x "$dst"
+    copy_with_exec "$src" "$dst"
 done
 
 for file in htop.desktop nvidia-smi.desktop code.desktop google-chrome.desktop xfce4-terminal-emulator.desktop; do
@@ -36,14 +42,15 @@ for file in htop.desktop nvidia-smi.desktop code.desktop google-chrome.desktop x
         exit 1
     fi
 
-    cp "$src" "$dst"
-    chmod +x "$dst"
+    copy_with_exec "$src" "$dst"
 done
 
+tmp_isaac_desktop="$(mktemp)"
 sed \
     -e "s|__HOME__|$current_home|g" \
-    "$desktop_src_dir/isaac-sim.desktop" > "$desktop_dir/isaac-sim.desktop"
-chmod +x "$desktop_dir/isaac-sim.desktop"
+    "$desktop_src_dir/isaac-sim.desktop" > "$tmp_isaac_desktop"
+install -m 755 "$tmp_isaac_desktop" "$desktop_dir/isaac-sim.desktop"
+rm -f "$tmp_isaac_desktop"
 
 echo "========================================"
 echo "바로가기 복사 완료"

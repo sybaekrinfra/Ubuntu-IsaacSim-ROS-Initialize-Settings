@@ -66,6 +66,10 @@ if ! grep -q "source /opt/ros/jazzy/setup.bash" ~/.bashrc; then
     echo "source /opt/ros/jazzy/setup.bash" >> ~/.bashrc
 fi
 
+if ! grep -q "export ROS_DOMAIN_ID" ~/.bashrc; then
+    echo "export ROS_DOMAIN_ID=0" >> ~/.bashrc
+fi
+
 source /opt/ros/jazzy/setup.bash
 
 banner "ROS 2 Jazzy 설치 완료"

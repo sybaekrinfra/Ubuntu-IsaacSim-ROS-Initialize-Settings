@@ -24,6 +24,8 @@ sudo apt install -y \
     software-properties-common \
     apt-transport-https \
     ca-certificates \
+    sysbanner \
+    figlet \
     gnupg \
     unzip \
     wget \
