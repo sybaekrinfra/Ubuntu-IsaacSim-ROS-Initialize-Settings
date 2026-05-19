@@ -1,0 +1,8 @@
+[Desktop Entry]
+Version=1.0
+Name=Isaac Sim
+Icon=__HOME__/isaacsim/exts/isaacsim.app.setup/data/omni.isaac.sim.png
+Terminal=true
+Type=Application
+StartupWMClass=IsaacSim
+Exec=xfce4-terminal --title="ISAAC SIM 5.1.0" --geometry=139x59+0+0 -e "bash -lc '__HOME__/isaacsim/isaac-sim.sh'"

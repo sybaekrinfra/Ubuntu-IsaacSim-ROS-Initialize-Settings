@@ -1,0 +1,6 @@
+[Desktop Entry]
+Name=NVIDIA-SMI
+Terminal=true
+Type=Application
+Exec=xfce4-terminal --title="NVIDIA-SMI" --geometry=94x25-0+0 -e "watch -n 1 nvidia-smi"
+Icon=nvidia-settings

@@ -1,0 +1,6 @@
+[Desktop Entry]
+Name=HTOP
+Terminal=true
+Type=Application
+Exec=xfce4-terminal --title="HTOP" --geometry=94x25-0-0 -e htop
+Icon=utilities-system-monitor
