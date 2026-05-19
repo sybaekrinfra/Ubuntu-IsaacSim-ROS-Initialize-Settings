@@ -6,6 +6,7 @@
 
 - `01_install_base.sh`
   - 기본 패키지를 설치합니다.
+  - `install/set-cpu-performance.sh`를 호출해 CPU governor를 performance로 설정합니다.
   - NVIDIA 드라이버를 설치합니다.
   - 설치가 끝나면 재부팅합니다.
 
@@ -19,6 +20,7 @@
 
 - `install/`
   - 개별 설치 스크립트가 들어 있습니다.
+  - `set-cpu-performance.sh`는 systemd 서비스를 만들어 CPU governor를 performance로 고정합니다.
   - `copy_files.sh`는 `desktop/` 폴더의 바로가기 파일 중 `htop.desktop`과 `nvidia-smi.desktop`을 `~/.config/autostart`에 복사하고, 나머지는 `~/Desktop`에 복사합니다.
 
 - `desktop/`
@@ -85,6 +87,7 @@ Ubuntu Setting/
 │   ├── install_nomachine.sh
 │   ├── install_nvidia_container_toolkit.sh
 │   ├── install_ros2_jazzy.sh
+│   ├── set-cpu-performance.sh
 │   └── install_vscode.sh
 └── README.md
 ```

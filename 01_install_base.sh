@@ -31,7 +31,7 @@ sudo apt install -y \
 
 echo ""
 echo "[3/4] CPU 성능 모드로 설정"
-sudo cpupower frequency-set -g performance || true
+bash install/set-cpu-performance.sh
 
 echo ""
 echo "[4/4] NVIDIA 드라이버 설치"
