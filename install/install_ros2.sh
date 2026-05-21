@@ -16,6 +16,9 @@ detect_ros_distro() {
         noble)
             echo "jazzy"
             ;;
+        resolute)
+            echo "rolling"
+            ;;
         *)
             echo ""
             ;;
