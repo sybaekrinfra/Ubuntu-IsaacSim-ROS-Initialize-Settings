@@ -88,7 +88,7 @@ Ubuntu Setting/
 │   ├── google-chrome.desktop
 │   ├── htop.desktop
 │   ├── isaac-sim.desktop
-│   ├── NVIDIA-SMI.desktop
+│   ├── nvidia-smi.desktop
 │   └── xfce4-terminal-emulator.desktop
 ├── install/
 │   ├── copy_files.sh
