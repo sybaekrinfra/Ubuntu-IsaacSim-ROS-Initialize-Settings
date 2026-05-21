@@ -3,6 +3,7 @@ set -e
 
 echo "Google Chrome 설치 시작"
 echo "[1/6] Downloads 폴더로 이동"
+mkdir -p ~/Downloads
 cd ~/Downloads
 
 echo "[2/6] Google Chrome 다운로드"
