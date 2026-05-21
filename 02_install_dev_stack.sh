@@ -33,8 +33,8 @@ sudo ./get-docker.sh
 sudo usermod -aG docker "${USER}"
 
 echo ""
-echo "[6/8] ROS 2 Jazzy 설치"
-bash install/install_ros2_jazzy.sh
+echo "[6/8] ROS 2 설치"
+bash install/install_ros2.sh
 
 echo ""
 echo "[7/8] NVIDIA Container Toolkit 설치"

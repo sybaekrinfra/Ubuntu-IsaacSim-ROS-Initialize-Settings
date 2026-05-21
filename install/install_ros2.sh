@@ -1,4 +1,4 @@
-﻿#!/bin/bash
+#!/bin/bash
 set -e
 
 banner() {
@@ -7,7 +7,41 @@ banner() {
     echo "========================================"
 }
 
-banner "ROS 2 Jazzy 설치 시작"
+detect_ros_distro() {
+    if [ -n "${ROS_DISTRO:-}" ]; then
+        echo "$ROS_DISTRO"
+        return
+    fi
+
+    UBUNTU_CODENAME=$(. /etc/os-release && echo "${UBUNTU_CODENAME:-${VERSION_CODENAME}}")
+
+    case "$UBUNTU_CODENAME" in
+        jammy)
+            echo "humble"
+            ;;
+        noble)
+            echo "jazzy"
+            ;;
+        *)
+            echo ""
+            ;;
+    esac
+}
+
+ROS_DISTRO="$(detect_ros_distro)"
+
+if [ -z "$ROS_DISTRO" ]; then
+    echo "지원하지 않는 Ubuntu 버전입니다. ROS_DISTRO를 직접 지정하거나 jammy/noble 환경에서 실행하세요."
+    exit 1
+fi
+
+if [ "$ROS_DISTRO" != "humble" ] && [ "$ROS_DISTRO" != "jazzy" ]; then
+    echo "지원하지 않는 ROS_DISTRO입니다: $ROS_DISTRO"
+    echo "지원 값: humble, jazzy"
+    exit 1
+fi
+
+banner "ROS 2 ${ROS_DISTRO^} 설치 시작"
 
 echo ""
 echo "[1/8] 로케일 설정"
@@ -32,7 +66,7 @@ ROS_APT_SOURCE_VERSION=$(curl -s https://api.github.com/repos/ros-infrastructure
   | grep -F "tag_name" \
   | awk -F'"' '{print $4}')
 
-UBUNTU_CODENAME=$(. /etc/os-release && echo ${UBUNTU_CODENAME:-${VERSION_CODENAME}})
+UBUNTU_CODENAME=$(. /etc/os-release && echo "${UBUNTU_CODENAME:-${VERSION_CODENAME}}")
 
 curl -L -o /tmp/ros2-apt-source.deb \
   "https://github.com/ros-infrastructure/ros-apt-source/releases/download/${ROS_APT_SOURCE_VERSION}/ros2-apt-source_${ROS_APT_SOURCE_VERSION}.${UBUNTU_CODENAME}_all.deb"
@@ -46,10 +80,10 @@ sudo apt install -y ros-dev-tools
 sudo apt install -y python3-colcon-common-extensions
 
 echo ""
-echo "[6/8] ROS 2 Jazzy Desktop 설치"
+echo "[6/8] ROS 2 ${ROS_DISTRO^} Desktop 설치"
 sudo apt update
 sudo apt upgrade -y
-sudo apt install -y ros-jazzy-desktop
+sudo apt install -y "ros-${ROS_DISTRO}-desktop"
 
 echo ""
 echo "[7/8] rosdep 초기화 및 업데이트"
@@ -62,17 +96,17 @@ rosdep update
 
 echo ""
 echo "[8/8] bashrc에 ROS 환경 설정 추가"
-if ! grep -q "source /opt/ros/jazzy/setup.bash" ~/.bashrc; then
-    echo "source /opt/ros/jazzy/setup.bash" >> ~/.bashrc
+if ! grep -q "source /opt/ros/${ROS_DISTRO}/setup.bash" ~/.bashrc; then
+    echo "source /opt/ros/${ROS_DISTRO}/setup.bash" >> ~/.bashrc
 fi
 
 if ! grep -q "export ROS_DOMAIN_ID" ~/.bashrc; then
     echo "export ROS_DOMAIN_ID=0" >> ~/.bashrc
 fi
 
-source /opt/ros/jazzy/setup.bash
+source "/opt/ros/${ROS_DISTRO}/setup.bash"
 
-banner "ROS 2 Jazzy 설치 완료"
+banner "ROS 2 ${ROS_DISTRO^} 설치 완료"
 
 echo ""
 echo "확인 명령어:"

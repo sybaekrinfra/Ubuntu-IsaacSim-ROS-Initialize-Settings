@@ -38,8 +38,7 @@ bash install/set-cpu-performance.sh
 echo ""
 echo "[4/4] NVIDIA 드라이버 설치"
 ubuntu-drivers devices
-sudo apt update
-sudo apt install -y nvidia-driver-580
+sudo ubuntu-drivers install nvidia:580
 
 banner "기본 설치 완료. 이제 재부팅합니다."
 sudo reboot
