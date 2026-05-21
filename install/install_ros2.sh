@@ -71,6 +71,7 @@ echo "[6/8] Installing ROS 2 ${ROS_DISTRO} desktop"
 sudo apt update
 sudo apt upgrade -y
 sudo apt install -y "ros-${ROS_DISTRO}-desktop"
+sudo apt install -y "ros-${ROS_DISTRO}-rmw-cyclonedds-cpp"
 
 echo "[7/8] Initializing and updating rosdep"
 if [ ! -f /etc/ros/rosdep/sources.list.d/20-default.list ]; then

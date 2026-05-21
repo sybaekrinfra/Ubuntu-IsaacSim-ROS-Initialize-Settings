@@ -21,7 +21,11 @@ sudo apt install -y \
     curl
 
 echo "[3/4] CPU 성능 모드로 설정"
-bash install/set-cpu-performance.sh
+if command -v systemd-detect-virt >/dev/null 2>&1 && systemd-detect-virt --vm --quiet; then
+    echo "VM 환경이므로 CPU performance 설정을 건너뜁니다."
+else
+    bash install/set-cpu-performance.sh
+fi
 
 echo "[4/4] NVIDIA 드라이버 설치"
 ubuntu-drivers devices
