@@ -7,9 +7,7 @@ autostart_dir="$HOME/.config/autostart"
 desktop_dir="$HOME/Desktop"
 current_home="$HOME"
 
-echo "========================================"
 echo "바로가기 복사 시작"
-echo "========================================"
 
 mkdir -p "$autostart_dir"
 mkdir -p "$desktop_dir"
@@ -52,6 +50,4 @@ sed \
 install -m 755 "$tmp_isaac_desktop" "$desktop_dir/isaac-sim.desktop"
 rm -f "$tmp_isaac_desktop"
 
-echo "========================================"
 echo "바로가기 복사 완료"
-echo "========================================"

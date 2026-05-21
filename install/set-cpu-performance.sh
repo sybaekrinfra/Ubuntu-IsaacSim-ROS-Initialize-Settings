@@ -1,13 +1,7 @@
 #!/bin/bash
 set -e
 
-banner() {
-    echo "========================================"
-    echo "$1"
-    echo "========================================"
-}
-
-banner "CPU 성능 모드 설정 시작"
+echo "CPU performance mode setup start"
 
 sudo tee /etc/systemd/system/cpu-performance.service > /dev/null << 'SERVICE'
 [Unit]
@@ -23,14 +17,12 @@ RemainAfterExit=yes
 WantedBy=multi-user.target
 SERVICE
 
-echo ""
-echo "🔄 systemd 설정을 적용하고 서비스를 활성화합니다..."
+echo "Applying systemd configuration and enabling the service"
 sudo systemctl daemon-reload
 sudo systemctl enable cpu-performance.service
 sudo systemctl start cpu-performance.service
 
-echo ""
-echo "✅ 설정 완료! 현재 CPU 상태:"
+echo "Setup complete. Current CPU governor:"
 cpupower frequency-info | grep "The governor" || true
 
-banner "CPU 성능 모드 설정 완료"
+echo "CPU performance mode setup complete"
