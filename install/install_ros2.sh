@@ -89,6 +89,10 @@ if ! grep -q "export ROS_DOMAIN_ID" ~/.bashrc; then
     echo "export ROS_DOMAIN_ID=0" >> ~/.bashrc
 fi
 
+if ! grep -q "export RMW_IMPLEMENTATION" ~/.bashrc; then
+    echo "export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp" >> ~/.bashrc
+fi
+
 source "/opt/ros/${ROS_DISTRO}/setup.bash"
 
 echo "ROS 2 ${ROS_DISTRO} install complete"
