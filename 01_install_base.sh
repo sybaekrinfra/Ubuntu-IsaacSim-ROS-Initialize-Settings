@@ -1,6 +1,22 @@
 #!/bin/bash
 set -e
 
+detect_ubuntu_codename() {
+    . /etc/os-release
+    echo "${UBUNTU_CODENAME:-${VERSION_CODENAME}}"
+}
+
+UBUNTU_CODENAME="$(detect_ubuntu_codename)"
+XUBUNTU_DESKTOP_PACKAGE="xubuntu-desktop"
+
+case "$UBUNTU_CODENAME" in
+    noble|resolute)
+        XUBUNTU_DESKTOP_PACKAGE="xubuntu-desktop-minimal"
+        ;;
+esac
+
+echo "Ubuntu codename: ${UBUNTU_CODENAME}, using package: ${XUBUNTU_DESKTOP_PACKAGE}"
+
 echo "기본 시스템 및 NVIDIA 드라이버 설치 시작"
 echo "[1/4] apt 업데이트 및 패키지 업그레이드"
 sudo apt update
@@ -11,7 +27,7 @@ sudo apt install -y \
     build-essential \
     linux-tools-common \
     linux-tools-generic \
-    xubuntu-desktop \
+    "$XUBUNTU_DESKTOP_PACKAGE" \
     software-properties-common \
     apt-transport-https \
     ca-certificates \
