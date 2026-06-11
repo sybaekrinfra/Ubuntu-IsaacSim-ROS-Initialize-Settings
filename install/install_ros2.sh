@@ -67,14 +67,15 @@ sudo dpkg -i /tmp/ros2-apt-source.deb
 
 echo "[5/8] Installing ROS development tools"
 sudo apt update
-sudo apt install -y ros-dev-tools
-sudo apt install -y python3-colcon-common-extensions
+sudo apt install -y ros-dev-tools python3-rosdep python3-colcon-common-extensions
 
 echo "[6/8] Installing ROS 2 ${ROS_DISTRO} desktop"
 sudo apt update
 sudo apt upgrade -y
 sudo apt install -y "ros-${ROS_DISTRO}-desktop"
 sudo apt install -y "ros-${ROS_DISTRO}-rmw-cyclonedds-cpp"
+sudo apt install -y "ros-${ROS_DISTRO}-vision-msgs"
+sudo apt install -y "ros-${ROS_DISTRO}-ackermann-msgs"
 
 echo "[7/8] Initializing and updating rosdep"
 if [ ! -f /etc/ros/rosdep/sources.list.d/20-default.list ]; then
