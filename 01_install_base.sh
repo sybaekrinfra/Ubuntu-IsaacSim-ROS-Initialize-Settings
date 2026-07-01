@@ -48,7 +48,7 @@ ubuntu-drivers devices
 sudo ubuntu-drivers install nvidia:580
 
 echo "[5/5] 한글 입력기 ibus-hangul 설치"
-sudo apt install ibus-hangul
+sudo apt install ibus-hangul -y
 
 echo "기본 설치 완료. 이제 재부팅합니다."
 sudo reboot
