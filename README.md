@@ -88,6 +88,7 @@ Ubuntu Setting/
 │   ├── google-chrome.desktop
 │   ├── htop.desktop
 │   ├── isaac-sim.desktop
+│   ├── isaac-sim-newton.desktop
 │   ├── nvidia-smi.desktop
 │   └── xfce4-terminal-emulator.desktop
 ├── install/

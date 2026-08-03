@@ -1,4 +1,4 @@
-﻿#!/bin/bash
+#!/bin/bash
 set -e
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -43,11 +43,21 @@ for file in htop.desktop nvidia-smi.desktop code.desktop google-chrome.desktop x
     copy_with_exec "$src" "$dst"
 done
 
-tmp_isaac_desktop="$(mktemp)"
-sed \
-    -e "s|__HOME__|$current_home|g" \
-    "$desktop_src_dir/isaac-sim.desktop" > "$tmp_isaac_desktop"
-install -m 755 "$tmp_isaac_desktop" "$desktop_dir/isaac-sim.desktop"
-rm -f "$tmp_isaac_desktop"
+for file in isaac-sim.desktop isaac-sim-newton.desktop; do
+    src="$desktop_src_dir/$file"
+    dst="$desktop_dir/$file"
+
+    if [ ! -f "$src" ]; then
+        echo "파일을 찾을 수 없습니다: $src"
+        exit 1
+    fi
+
+    tmp_isaac_desktop="$(mktemp)"
+    sed \
+        -e "s|__HOME__|$current_home|g" \
+        "$src" > "$tmp_isaac_desktop"
+    install -m 755 "$tmp_isaac_desktop" "$dst"
+    rm -f "$tmp_isaac_desktop"
+done
 
 echo "바로가기 복사 완료"
