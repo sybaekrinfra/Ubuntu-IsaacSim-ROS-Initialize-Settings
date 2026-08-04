@@ -2,16 +2,27 @@
 
 이 저장소는 새 Ubuntu 워크스테이션을 빠르게 세팅하기 위한 스크립트 모음입니다.
 
-## 주의점 : 현재 설치는 Ubuntu Server 버전 기준입니다. Desktop 사용자의 경우, GNOME Desktop을 사용한다면, 해당 내용 중 바로가기 파일과 xfce Desktop 설치를 건너뛰세요.
+> [!CAUTION]
+> 현재 설치는 Ubuntu Server 기준입니다. Ubuntu Desktop에서 GNOME을 계속 사용하려면 Xfce Desktop 설치와 `.desktop` 바로가기 복사 단계를 건너뛰세요.
 
-현재 구조는 하나의 공통 스크립트 세트로 통합되어 있고, `Ubuntu` 버전으로 `ROS` 배포판을 자동 선택합니다.
+현재 구조는 하나의 공통 스크립트 세트로 통합되어 있고, Ubuntu 버전에 맞는 ROS 2 배포판을 자동 선택합니다.
 
-## 지원 조합
+## 지원 범위
 
-- `Ubuntu 24.04` -> `ROS 2 Jazzy`
-- `Ubuntu 22.04` -> `ROS 2 Humble`
+| Ubuntu | 코드명 | ROS 2 | 지원 범위 |
+| --- | --- | --- | --- |
+| 22.04 | Jammy | Humble | 전체 설치 스크립트 지원 |
+| 24.04 | Noble | Jazzy | 전체 설치 스크립트 권장 조합 |
+| 26.04 | Resolute | Lyrical | ROS 2 설치만 지원, Isaac Sim 제외 |
 
-`ROS_DISTRO` 환경 변수를 직접 지정하면 수동으로도 선택할 수 있습니다.
+`Noble`은 ROS 2 배포판이 아니라 Ubuntu 24.04의 코드명입니다. Ubuntu 26.04의 코드명은 `Resolute`이며 대응하는 안정 ROS 2 배포판은 `Lyrical`입니다.
+
+ROS 2 Lyrical은 Ubuntu 26.04를 공식 지원하지만, 현재 Isaac Sim의 공식 지원 OS는 Ubuntu 22.04/24.04이고 권장 ROS 2 배포판은 Humble/Jazzy입니다. 따라서 Ubuntu 26.04에서는 `02_install_dev_stack.sh` 전체 실행 대신 필요한 개별 설치 스크립트를 선택해 사용하세요.
+
+- [ROS 2 Lyrical Ubuntu 지원](https://docs.ros.org/en/lyrical/Installation/Alternatives/Ubuntu-Install-Binary.html)
+- [Isaac Sim ROS 2 지원 조합](https://docs.isaacsim.omniverse.nvidia.com/latest/installation/install_ros.html)
+
+`ROS_DISTRO` 환경 변수를 직접 지정할 수도 있지만, 호스트 Ubuntu에서 바이너리 패키지를 제공하는 조합이어야 합니다.
 
 ## 구성
 
@@ -31,13 +42,15 @@
 
 - `install/`
   - 개별 설치 스크립트가 들어 있습니다.
-  - `install_ros2.sh`는 `jammy -> humble`, `noble -> jazzy`로 자동 분기합니다.
+  - `install_ros2.sh`는 `jammy -> humble`, `noble -> jazzy`, `resolute -> lyrical`로 자동 분기합니다.
   - `copy_files.sh`는 `desktop/` 폴더의 바로가기 파일 중 `htop.desktop`과 `nvidia-smi.desktop`을 `~/.config/autostart`에 복사하고, 나머지는 `~/Desktop`에 복사합니다.
 
 - `desktop/`
   - `.desktop` 바로가기 파일이 들어 있습니다.
 
 ## 실행 순서
+
+Ubuntu 22.04/24.04에서 전체 스택을 설치하는 순서입니다.
 
 1. `01_install_base.sh`를 실행합니다.
 2. 재부팅합니다.
@@ -58,7 +71,16 @@ bash 02_install_dev_stack.sh
 ```bash
 ROS_DISTRO=humble bash install/install_ros2.sh
 ROS_DISTRO=jazzy bash install/install_ros2.sh
+ROS_DISTRO=lyrical bash install/install_ros2.sh
 ```
+
+Ubuntu 26.04에서 ROS 2 Lyrical만 설치하려면 자동 감지를 사용합니다.
+
+```bash
+bash install/install_ros2.sh
+```
+
+`ROS_DISTRO` 지정은 Ubuntu와 ROS 2의 공식 지원 조합을 바꾸지 않습니다. 예를 들어 Ubuntu 22.04에서 Jazzy 바이너리 설치를 강제하는 용도로 사용하면 안 됩니다.
 
 ## 참고
 
@@ -73,9 +95,11 @@ ROS_DISTRO=jazzy bash install/install_ros2.sh
 
 - 네트워크 연결이 필요합니다.
 - 일부 단계는 `sudo` 권한이 필요합니다.
-- `nvidia-driver-580`은 저장소 상태에 따라 설치 가능 여부가 달라질 수 있습니다.
+- 설치 스크립트는 NVIDIA 580 드라이버를 지정합니다. Isaac Sim 버전별 최소 드라이버 요구사항과 Ubuntu 저장소의 제공 버전을 실행 전에 확인하세요. Isaac Sim 6.0.1 공식 요구사항에는 Linux 595.58.03이 기재되어 있습니다.
 - ROS 2 설치는 GitHub 최신 릴리스 API에 의존합니다.
-- Ubuntu 버전과 ROS 배포판 조합은 함께 맞춰야 합니다. 예를 들어 `22.04`에서는 `Humble`, `24.04`에서는 `Jazzy` 기준으로 확인하는 것이 안전합니다.
+- Ubuntu 버전과 ROS 2 배포판 조합은 함께 맞춰야 합니다. 이 스크립트의 기본 조합은 `22.04/Humble`, `24.04/Jazzy`, `26.04/Lyrical`입니다.
+- Ubuntu 26.04/Lyrical은 ROS 2 단독 설치 범위입니다. Isaac Sim과 ROS 2 Bridge까지 포함하는 전체 환경은 Ubuntu 24.04/Jazzy를 권장합니다.
+- [Isaac Sim 시스템 요구사항](https://docs.isaacsim.omniverse.nvidia.com/latest/installation/requirements.html)
 
 ## 디렉터리 예시
 

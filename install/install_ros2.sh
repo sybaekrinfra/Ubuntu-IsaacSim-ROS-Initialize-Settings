@@ -17,7 +17,7 @@ detect_ros_distro() {
             echo "jazzy"
             ;;
         resolute)
-            echo "rolling"
+            echo "lyrical"
             ;;
         *)
             echo ""
@@ -28,15 +28,19 @@ detect_ros_distro() {
 ROS_DISTRO="$(detect_ros_distro)"
 
 if [ -z "$ROS_DISTRO" ]; then
-    echo "Unsupported Ubuntu version. Set ROS_DISTRO manually or run on jammy/noble."
+    echo "Unsupported Ubuntu version. Set ROS_DISTRO manually or run on jammy/noble/resolute."
     exit 1
 fi
 
-if [ "$ROS_DISTRO" != "humble" ] && [ "$ROS_DISTRO" != "jazzy" ]; then
-    echo "Unsupported ROS_DISTRO: $ROS_DISTRO"
-    echo "Supported values: humble, jazzy"
-    exit 1
-fi
+case "$ROS_DISTRO" in
+    humble|jazzy|lyrical)
+        ;;
+    *)
+        echo "Unsupported ROS_DISTRO: $ROS_DISTRO"
+        echo "Supported values: humble, jazzy, lyrical"
+        exit 1
+        ;;
+esac
 
 echo "ROS 2 ${ROS_DISTRO} install start"
 echo "[1/8] Locale setup"
