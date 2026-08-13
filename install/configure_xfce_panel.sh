@@ -3,9 +3,10 @@ set -e
 
 desktop_dir="$HOME/Desktop"
 panel_config_dir="$HOME/.config/xfce4/panel"
-marker_file="$panel_config_dir/.desktop-launchers-configured-v3"
+marker_file="$panel_config_dir/.desktop-launchers-configured-v4"
 old_marker_file="$panel_config_dir/.desktop-launchers-configured"
 v2_marker_file="$panel_config_dir/.desktop-launchers-configured-v2"
+v3_marker_file="$panel_config_dir/.desktop-launchers-configured-v3"
 autostart_file="$HOME/.config/autostart/configure-xfce-panel.desktop"
 
 if [ -f "$marker_file" ]; then
@@ -40,19 +41,17 @@ set_property() {
 
 screen_size="$(xrandr --current 2>/dev/null | awk '$0 ~ /\*/ { print $1; exit }')"
 screen_width="${screen_size%x*}"
-screen_height="${screen_size#*x}"
-if ! [[ "$screen_width" =~ ^[0-9]+$ && "$screen_height" =~ ^[0-9]+$ ]]; then
+if ! [[ "$screen_width" =~ ^[0-9]+$ ]]; then
     screen_width=1920
-    screen_height=1080
 fi
 panel_x=$((screen_width / 2))
-panel_y=$((screen_height - 1))
 
-echo "Moving Xfce panel ${panel_id} to the bottom (${panel_x}, ${panel_y})"
+echo "Moving Xfce panel ${panel_id} to the bottom center"
 set_property "$panel_path/position-locked" bool false
 set_property "$panel_path/mode" int 0
 set_property "$panel_path/length" int 100
-set_property "$panel_path/position" string "p=6;x=${panel_x};y=${panel_y}"
+# Xfce snap-position code 12 is the bottom edge; x selects its horizontal center.
+set_property "$panel_path/position" string "p=12;x=${panel_x};y=0"
 set_property "$panel_path/position-locked" bool true
 
 plugin_ids() {
@@ -213,6 +212,6 @@ done
 
 mkdir -p "$panel_config_dir"
 touch "$marker_file"
-rm -f "$old_marker_file" "$v2_marker_file" "$autostart_file"
+rm -f "$old_marker_file" "$v2_marker_file" "$v3_marker_file" "$autostart_file"
 xfce4-panel --restart
 echo "Xfce panel configuration complete"
