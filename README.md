@@ -46,6 +46,7 @@ ROS 2 Lyrical은 Ubuntu 26.04를 공식 지원하지만, 현재 Isaac Sim의 공
   - 개별 설치 스크립트가 들어 있습니다.
   - `install_ros2.sh`는 `jammy -> humble`, `noble -> jazzy`, `resolute -> lyrical`로 자동 분기합니다.
   - `copy_files.sh`는 `desktop/` 폴더의 바로가기 파일 중 `htop.desktop`과 `nvidia-smi.desktop`을 `~/.config/autostart`에 복사하고, 나머지는 `~/Desktop`에 복사합니다.
+  - 바로가기 복사 후 Xfce 패널을 화면 하단으로 옮기고, 확장형 구분자 뒤에 모든 `.desktop` 바로가기를 우측 아이콘으로 등록합니다. Xfce 세션이 실행 중이 아니면 다음 로그인 때 자동 적용됩니다.
 
 - `desktop/`
   - `.desktop` 바로가기 파일이 들어 있습니다.
@@ -119,6 +120,7 @@ Ubuntu Setting/
 │   └── xfce4-terminal-emulator.desktop
 ├── install/
 │   ├── copy_files.sh
+│   ├── configure_xfce_panel.sh
 │   ├── install_chrome.sh
 │   ├── install_isaacsim.sh
 │   ├── install_xrdp.sh

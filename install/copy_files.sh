@@ -6,6 +6,7 @@ desktop_src_dir="$(cd "$script_dir/../desktop" && pwd)"
 autostart_dir="$HOME/.config/autostart"
 desktop_dir="$HOME/Desktop"
 current_home="$HOME"
+local_bin_dir="$HOME/.local/bin"
 
 echo "바로가기 복사 시작"
 
@@ -61,3 +62,25 @@ for file in isaac-sim.desktop isaac-sim-newton.desktop; do
 done
 
 echo "바로가기 복사 완료"
+
+echo "Xfce 패널 설정 예약"
+mkdir -p "$local_bin_dir"
+panel_script_src="$script_dir/configure_xfce_panel.sh"
+panel_script_dst="$local_bin_dir/configure-xfce-panel.sh"
+install -m 755 "$panel_script_src" "$panel_script_dst"
+
+cat > "$autostart_dir/configure-xfce-panel.desktop" <<EOF
+[Desktop Entry]
+Type=Application
+Name=Configure Xfce Panel
+Exec=$panel_script_dst
+OnlyShowIn=XFCE;
+X-GNOME-Autostart-enabled=true
+Terminal=false
+EOF
+
+if [ -n "${DISPLAY:-}" ] && [ -n "${DBUS_SESSION_BUS_ADDRESS:-}" ]; then
+    "$panel_script_dst" || true
+else
+    echo "다음 Xfce 로그인 시 패널 설정이 자동 적용됩니다."
+fi
