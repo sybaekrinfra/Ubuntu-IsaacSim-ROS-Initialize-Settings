@@ -8,7 +8,7 @@ chmod 755 ~/Downloads
 
 echo "[2/6] 패키지를 ~/Downloads에 다운로드"
 curl -L -o ~/Downloads/nomachine_9.5.7_2_amd64.deb \
-    https://web9001.nomachine.com/download/9.5/Linux/nomachine_9.5.7_2_amd64.deb
+    https://web9001.nomachine.com/download/10.0/Linux/nomachine-personal-edition_10.0.57_2_amd64.deb
 chmod 644 ~/Downloads/nomachine_9.5.7_2_amd64.deb
 
 echo "[3/6] NoMachine 설치"
