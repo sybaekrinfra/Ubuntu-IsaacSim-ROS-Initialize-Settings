@@ -33,7 +33,9 @@ ROS 2 Lyrical은 Ubuntu 26.04를 공식 지원하지만, 현재 Isaac Sim의 공
   - 설치가 끝나면 재부팅합니다.
 
 - `02_install_dev_stack.sh`
-  - VSCode, Chrome, NoMachine을 설치합니다.
+  - VSCode, Chrome, XRDP를 설치합니다.
+  - XRDP는 Windows RDP 클라이언트에서 전달한 계정으로 Xorg 세션을 바로 시작하도록 설정합니다.
+  - Xfce의 기본 Terminal Emulator를 Xfce Terminal로 설정합니다.
   - Docker를 설치합니다.
   - `install/install_ros2.sh`를 호출해 Ubuntu 버전에 맞는 ROS 2를 설치합니다.
   - NVIDIA Container Toolkit을 설치합니다.
@@ -119,7 +121,7 @@ Ubuntu Setting/
 │   ├── copy_files.sh
 │   ├── install_chrome.sh
 │   ├── install_isaacsim.sh
-│   ├── install_nomachine.sh
+│   ├── install_xrdp.sh
 │   ├── install_nvidia_container_toolkit.sh
 │   ├── install_ros2.sh
 │   ├── install_vscode.sh

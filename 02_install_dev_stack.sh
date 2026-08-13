@@ -11,8 +11,8 @@ bash install/install_vscode.sh
 echo "[3/8] Installing Chrome"
 bash install/install_chrome.sh
 
-echo "[4/8] Installing NoMachine"
-bash install/install_nomachine.sh
+echo "[4/8] Installing XRDP"
+bash install/install_xrdp.sh
 
 echo "[5/8] Installing Docker"
 curl -fsSL https://get.docker.com -o get-docker.sh
