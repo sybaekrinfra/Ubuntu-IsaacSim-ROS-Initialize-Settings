@@ -42,9 +42,15 @@ ROS 2 Lyrical은 Ubuntu 26.04를 공식 지원하지만, 현재 Isaac Sim의 공
   - Isaac Sim을 설치합니다.
   - 바탕화면과 자동실행 바로가기를 복사합니다.
 
+- `03_install_isaac_lab.sh`
+  - NVIDIA 드라이버 상태를 확인합니다.
+  - `install/install_isaaclab.sh`를 호출해 Isaac Lab을 설치합니다.
+  - 설치 확인을 위해 `create_empty.py` 튜토리얼을 headless로 30초간 실행합니다(무한 루프 스크립트라 `timeout`으로 강제 종료하며, 이는 정상 동작입니다).
+
 - `install/`
   - 개별 설치 스크립트가 들어 있습니다.
   - `install_ros2.sh`는 `jammy -> humble`, `noble -> jazzy`, `resolute -> lyrical`로 자동 분기합니다.
+  - `install_isaaclab.sh`는 기본적으로 Isaac Lab `v3.0.0-beta2`를 `~/IsaacLab`에 클론하고, `~/isaacsim`(Isaac Sim 6.0.1 설치 경로)를 `_isaac_sim`으로 심볼릭 링크한 뒤 `./isaaclab.sh --install`을 실행합니다. `ISAACLAB_VERSION`, `ISAACSIM_DIR`, `ISAACLAB_DIR` 환경 변수로 버전과 경로를 바꿀 수 있습니다. `install/install_isaacsim.sh`로 Isaac Sim을 먼저 설치해야 합니다.
   - `copy_files.sh`는 `desktop/` 폴더의 바로가기 파일 중 `htop.desktop`과 `nvidia-smi.desktop`을 `~/.config/autostart`에 복사하고, 나머지는 `~/Desktop`에 복사합니다.
   - 바로가기 복사 후 현재 화면 크기를 기준으로 Xfce 패널을 화면 하단으로 옮기고, Terminal Emulator, Chrome, Visual Studio Code, Isaac Sim 바로가기를 알림/네트워크/배터리/소리/시계 영역 바로 앞에 등록합니다. Xfce 세션이 실행 중이 아니면 다음 로그인 때 자동 적용됩니다.
 
@@ -59,6 +65,7 @@ Ubuntu 22.04/24.04에서 전체 스택을 설치하는 순서입니다.
 2. 재부팅합니다.
 3. `02_install_dev_stack.sh`를 실행합니다.
 4. 전체 설치가 끝나면 다시 재부팅합니다.
+5. (선택) Isaac Lab이 필요하면 `03_install_isaac_lab.sh`를 실행합니다.
 
 ## 실행 방법
 
@@ -67,6 +74,13 @@ Ubuntu 22.04/24.04에서 전체 스택을 설치하는 순서입니다.
 ```bash
 bash 01_install_base.sh
 bash 02_install_dev_stack.sh
+bash 03_install_isaac_lab.sh
+```
+
+Isaac Lab 버전이나 설치 경로를 바꾸고 싶으면 다음처럼 지정할 수 있습니다.
+
+```bash
+ISAACLAB_VERSION=v3.0.0-beta2 bash 03_install_isaac_lab.sh
 ```
 
 특정 ROS 배포판을 강제로 쓰고 싶으면 다음처럼 지정할 수 있습니다.
@@ -110,6 +124,7 @@ bash install/install_ros2.sh
 Ubuntu Setting/
 ├── 01_install_base.sh
 ├── 02_install_dev_stack.sh
+├── 03_install_isaac_lab.sh
 ├── desktop/
 │   ├── code.desktop
 │   ├── google-chrome.desktop
@@ -122,6 +137,7 @@ Ubuntu Setting/
 │   ├── copy_files.sh
 │   ├── configure_xfce_panel.sh
 │   ├── install_chrome.sh
+│   ├── install_isaaclab.sh
 │   ├── install_isaacsim.sh
 │   ├── install_xrdp.sh
 │   ├── install_nvidia_container_toolkit.sh
