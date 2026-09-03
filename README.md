@@ -52,7 +52,9 @@ ROS 2 Lyrical은 Ubuntu 26.04를 공식 지원하지만, 현재 Isaac Sim의 공
   - `install_ros2.sh`는 `jammy -> humble`, `noble -> jazzy`, `resolute -> lyrical`로 자동 분기합니다.
   - `install_isaaclab.sh`는 기본적으로 Isaac Lab `v3.0.0-beta2`를 `~/IsaacLab`에 클론하고, `~/isaacsim`(Isaac Sim 6.0.1 설치 경로)를 `_isaac_sim`으로 심볼릭 링크한 뒤 `./isaaclab.sh --install`을 실행합니다. `ISAACLAB_VERSION`, `ISAACSIM_DIR`, `ISAACLAB_DIR` 환경 변수로 버전과 경로를 바꿀 수 있습니다. `install/install_isaacsim.sh`로 Isaac Sim을 먼저 설치해야 합니다.
   - `copy_files.sh`는 `desktop/` 폴더의 바로가기 파일 중 `htop.desktop`과 `nvidia-smi.desktop`을 `~/.config/autostart`에 복사하고, 나머지는 `~/Desktop`에 복사합니다.
-  - 바로가기 복사 후 현재 화면 크기를 기준으로 Xfce 패널을 화면 하단으로 옮기고, Terminal Emulator, Chrome, Visual Studio Code, Isaac Sim 바로가기를 알림/네트워크/배터리/소리/시계 영역 바로 앞에 등록합니다. Xfce 세션이 실행 중이 아니면 다음 로그인 때 자동 적용됩니다.
+  - 바로가기 복사 후 사용자별 기본 설정과 무관하게 Greybird/elementary-xfce 테마와 단일 하단 패널을 구성합니다.
+  - 하단 패널은 Whisker Menu, 작업 창 버튼, Terminal Emulator/Chrome/Visual Studio Code/Isaac Sim 바로가기, 알림/네트워크/배터리/소리/시계 순서로 구성됩니다. Xfce 세션이 실행 중이 아니면 다음 로그인 때 자동 적용됩니다.
+  - 기존 패널 설정은 `~/.config/xfce4/panel-backup-before-layout-v5/`에 한 번 백업합니다.
 
 - `desktop/`
   - `.desktop` 바로가기 파일이 들어 있습니다.

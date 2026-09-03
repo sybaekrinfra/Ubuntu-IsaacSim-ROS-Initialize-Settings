@@ -3,9 +3,21 @@ set -e
 
 echo "XRDP installation and configuration start"
 
-echo "[1/5] Installing XRDP and Xorg backend"
+echo "[1/5] Installing XRDP, Xorg backend, and Xfce desktop components"
 sudo apt update
-sudo apt install -y xrdp xorgxrdp xfce4-terminal
+sudo apt install -y \
+    xrdp \
+    xorgxrdp \
+    xfce4 \
+    xfce4-terminal \
+    xfce4-whiskermenu-plugin \
+    xfce4-pulseaudio-plugin \
+    xfce4-power-manager \
+    xfce4-notifyd \
+    pavucontrol \
+    fonts-noto-core \
+    greybird-gtk-theme \
+    elementary-xfce-icon-theme
 
 echo "[2/5] Configuring XRDP to use credentials supplied by the RDP client"
 sudo python3 - /etc/xrdp/xrdp.ini <<'PY'
