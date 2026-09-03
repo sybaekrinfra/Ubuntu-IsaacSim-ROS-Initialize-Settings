@@ -12,7 +12,8 @@ echo "[3/8] Installing Chrome"
 bash install/install_chrome.sh
 
 echo "[4/8] Installing XRDP"
-bash install/install_xrdp.sh
+# bash install/install_xrdp.sh
+bash install/install_nm.sh
 
 echo "[5/8] Installing Docker"
 curl -fsSL https://get.docker.com -o get-docker.sh
