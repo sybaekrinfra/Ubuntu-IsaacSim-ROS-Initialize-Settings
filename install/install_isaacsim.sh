@@ -6,22 +6,27 @@ select_isaacsim_version() {
 
     if [ -z "$choice" ]; then
         echo "Select Isaac Sim version to install:"
-        echo "  1) 6.0.1 (recommended)"
-        echo "  2) 5.0.0"
-        echo "  3) 4.5.0"
-        read -r -p "Enter choice [1-3, default: 1]: " choice
+        echo "  1) 6.1.0 (recommended)"
+        echo "  2) 6.0.1"
+        echo "  3) 5.0.0"
+        echo "  4) 4.5.0"
+        read -r -p "Enter choice [1-4, default: 1]: " choice
     fi
 
     case "$choice" in
-        ""|1|6.0.0)
+        ""|1|6.1.0)
+            ISAACSIM_VERSION="6.1.0"
+            ISAACSIM_URL="https://downloads.isaacsim.nvidia.com/isaac-sim-standalone-6.1.0-linux-x86_64.zip"
+            ;;
+        2|6.0.1)
             ISAACSIM_VERSION="6.0.1"
             ISAACSIM_URL="https://downloads.isaacsim.nvidia.com/isaac-sim-standalone-6.0.1-linux-x86_64.zip"
             ;;
-        2|5.0.0)
+        3|5.0.0)
             ISAACSIM_VERSION="5.0.0"
             ISAACSIM_URL="https://download.isaacsim.omniverse.nvidia.com/isaac-sim-standalone-5.0.0-linux-x86_64.zip"
             ;;
-        3|4.5.0)
+        4|4.5.0)
             ISAACSIM_VERSION="4.5.0"
             ISAACSIM_URL="https://download.isaacsim.omniverse.nvidia.com/isaac-sim-standalone-4.5.0-linux-x86_64.zip"
             ;;
