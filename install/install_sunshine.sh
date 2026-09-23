@@ -3,17 +3,17 @@ set -e
 
 echo "Sunshine 설치 시작"
 
-echo "[1/7] Cloudsmith 저장소 구성"
+echo "[1/8] Cloudsmith 저장소 구성"
 curl -1sLf 'https://dl.cloudsmith.io/public/lizardbyte/stable/cfg/setup/bash.deb.sh' | sudo -E bash
 
-echo "[2/7] Sunshine 설치"
+echo "[2/8] Sunshine 설치"
 sudo apt update
 sudo apt install -y sunshine
 
-echo "[3/7] 입력 장치 사용을 위해 현재 사용자를 input 그룹에 추가"
+echo "[3/8] 입력 장치 사용을 위해 현재 사용자를 input 그룹에 추가"
 sudo usermod -aG input "${USER}"
 
-echo "[4/7] sunshine.conf 기본값 설정"
+echo "[4/8] sunshine.conf 기본값 설정"
 CONFIG_DIR="$HOME/.config/sunshine"
 CONFIG_FILE="${CONFIG_DIR}/sunshine.conf"
 mkdir -p "${CONFIG_DIR}"
@@ -59,7 +59,7 @@ else
     echo "  - IP를 감지하지 못해 csrf_allowed_origins 설정을 건너뜁니다."
 fi
 
-echo "[5/7] 접속 시 마우스 가속 보정 훅 등록"
+echo "[5/8] 접속 시 마우스 가속 보정 훅 등록"
 HOOK_DIR="$HOME/.local/bin"
 HOOK_FILE="${HOOK_DIR}/sunshine-disable-mouse-accel.sh"
 mkdir -p "${HOOK_DIR}"
@@ -84,7 +84,7 @@ chmod +x "${HOOK_FILE}"
 
 set_conf "global_prep_cmd" '[{"do":"setsid -f $(HOME)/.local/bin/sunshine-disable-mouse-accel.sh >/tmp/sunshine-mouse-accel.log 2>&1","undo":""}]'
 
-echo "[6/7] apps.json에서 Desktop 항목만 남기기"
+echo "[6/8] apps.json에서 Desktop 항목만 남기기"
 APPS_FILE="${CONFIG_DIR}/apps.json"
 cat > "${APPS_FILE}" <<'EOF'
 {
@@ -100,12 +100,18 @@ cat > "${APPS_FILE}" <<'EOF'
 }
 EOF
 
-echo "[7/7] Sunshine 사용자 서비스 활성화"
+echo "[7/8] 웹 UI 로그인 자격증명 설정"
+WEBUI_PASSWORD="1"
+sunshine --creds "${USER}" "${WEBUI_PASSWORD}"
+echo "  - 웹 UI 아이디: ${USER} / 비밀번호: ${WEBUI_PASSWORD} (매우 단순한 비밀번호입니다. 필요하면 웹 UI에서 나중에 바꾸세요.)"
+
+echo "[8/8] Sunshine 사용자 서비스 활성화"
 systemctl --user --now enable app-dev.lizardbyte.app.Sunshine
 systemctl --user restart app-dev.lizardbyte.app.Sunshine
 
 echo "Sunshine 설치 완료"
 echo "input 그룹 적용을 위해 로그아웃 후 다시 로그인하세요."
+echo "웹 UI 로그인 아이디/비밀번호: ${USER} / ${WEBUI_PASSWORD}"
 if [ -n "${LOCAL_IP}" ]; then
     echo "웹 UI: https://${LOCAL_IP}:47990"
 else

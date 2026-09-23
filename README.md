@@ -57,8 +57,9 @@ ROS 2 Lyrical은 Ubuntu 26.04를 공식 지원하지만, 현재 Isaac Sim의 공
     - 로컬 IP를 감지할 수 있으면 `csrf_allowed_origins = https://<감지된 IP>:47990`을 설정합니다.
     - `~/.local/bin/sunshine-disable-mouse-accel.sh` 훅 스크립트를 배포하고, `global_prep_cmd`에 등록해 매 세션 시작마다 백그라운드로 실행되게 합니다. 이 훅은 Sunshine이 생성하는 가상 마우스 장치(이름에 `sunshine`이 포함된 libinput 장치)를 찾아 `libinput Accel Profile Enabled`를 flat으로, `libinput Accel Speed`를 -1로 설정해 호스트 X11의 pointer acceleration을 꺼줍니다. 가상 장치는 세션마다 새로 생성되므로 접속할 때마다 자동으로 재적용됩니다.
     - `~/.config/sunshine/apps.json`을 Desktop 항목 하나만 남긴 내용으로 덮어씁니다(Low Res Desktop/Steam Big Picture 제거). 재설치·재실행 시 매번 이 상태로 리셋됩니다.
+    - `sunshine --creds`로 웹 UI 로그인 아이디/비밀번호를 `<사용자 이름> / 1`로 자동 설정합니다. 비밀번호가 매우 단순하니 필요하면 웹 UI에서 바꾸세요.
     - 설치 후 로그아웃/재로그인이 필요하며, 웹 UI는 `https://<감지된 IP 또는 localhost>:47990`입니다.
-    - 아이디/비밀번호와 클라이언트 PIN 페어링은 스크립트가 자동으로 처리하지 않습니다. 아래 "Sunshine 최초 접속 설정"을 따라 직접 진행하세요.
+    - 클라이언트 PIN 페어링은 스크립트가 자동으로 처리하지 않습니다. 아래 "Sunshine 최초 접속 설정"을 따라 직접 진행하세요.
   - `legacy/`에는 더 이상 기본 실행에 포함되지 않는 XRDP/NoMachine 설치 스크립트(`install_xrdp.sh`, `install_nm.sh`, `nm/nm.deb`)가 들어 있습니다.
   - `install_ros2.sh`는 `jammy -> humble`, `noble -> jazzy`, `resolute -> lyrical`로 자동 분기합니다.
   - `install_isaaclab.sh`는 기본적으로 Isaac Lab `v3.0.0-beta2`를 `~/IsaacLab`에 클론하고, `~/isaacsim`(Isaac Sim 6.0.1 설치 경로)를 `_isaac_sim`으로 심볼릭 링크한 뒤 `./isaaclab.sh --install`을 실행합니다. `ISAACLAB_VERSION`, `ISAACSIM_DIR`, `ISAACLAB_DIR` 환경 변수로 버전과 경로를 바꿀 수 있습니다. `install/install_isaacsim.sh`로 Isaac Sim을 먼저 설치해야 합니다.
@@ -72,11 +73,11 @@ ROS 2 Lyrical은 Ubuntu 26.04를 공식 지원하지만, 현재 Isaac Sim의 공
 
 ## Sunshine 최초 접속 설정
 
-`install_sunshine.sh` 실행이 끝나도 아이디/비밀번호 설정과 클라이언트 페어링은 자동화되지 않습니다. 최초 1회는 직접 다음 순서로 진행해야 합니다.
+웹 UI 로그인 아이디/비밀번호는 `install_sunshine.sh`가 `<사용자 이름> / 1`로 자동 설정하지만, 클라이언트 페어링은 자동화되지 않습니다. 최초 1회는 직접 다음 순서로 진행해야 합니다.
 
-1. 호스트에서 웹 UI(`https://<호스트 IP>:47990`)에 접속해 아이디/비밀번호를 생성하고 로그인합니다.
+1. 호스트에서 웹 UI(`https://<호스트 IP>:47990`)에 접속해 `<사용자 이름> / 1`로 로그인합니다(필요하면 이 자리에서 비밀번호를 바꾸세요).
 2. 접속하려는 클라이언트 쪽 Moonlight 앱에서 이 호스트로 접속을 시도합니다.
-3. Moonlight에 PIN 번호와 컴퓨터 이름이 표시되면, 방금 로그인한 Sunshine 웹 UI의 PIN 메뉴에서 그 PIN과 컴퓨터 이름을 입력해 페어링을 완료합니다.
+3. Moonlight에 PIN 번호와 컴퓨터 이름이 표시되면, 방금 로그인한 Sunshine 웹 UI의 PIN 메뉴에서 그 PIN과 (원하는) 기기 이름을 입력해 페어링을 완료합니다. 이 기기 이름은 클라이언트를 구분하기 위한 참고용 라벨일 뿐이라 아무 값이나 입력해도 됩니다.
 
 이 PIN은 클라이언트를 새로 연결할 때마다 매번 새로 발급되는 값이라 스크립트로 미리 넣어둘 수 없습니다. 새 클라이언트를 추가할 때마다 2~3단계를 반복하세요.
 
