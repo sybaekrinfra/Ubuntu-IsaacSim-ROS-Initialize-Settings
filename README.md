@@ -52,8 +52,11 @@ ROS 2 Lyrical은 Ubuntu 26.04를 공식 지원하지만, 현재 Isaac Sim의 공
   - 개별 설치 스크립트가 들어 있습니다.
   - `install_sunshine.sh`는 Cloudsmith 저장소를 등록하고 Sunshine을 설치한 뒤, 사용자를 `input` 그룹에 추가하고 systemd 사용자 서비스(`app-dev.lizardbyte.app.Sunshine`)를 활성화합니다.
     - `~/.config/sunshine/sunshine.conf`에 `capture = x11`을 설정합니다.
+    - `sunshine_name`을 `<사용자 이름>_<로컬 IP 마지막 옥텟>`(예: `sybae_215`)으로 설정합니다(기본값은 PC 호스트명). IP를 감지하지 못하면 사용자 이름만 사용합니다.
     - `nvidia-smi`로 NVIDIA 드라이버가 감지되면 `encoder = nvenc`를 설정하고, 감지되지 않으면 기본값(자동 선택)을 유지합니다.
     - 로컬 IP를 감지할 수 있으면 `csrf_allowed_origins = https://<감지된 IP>:47990`을 설정합니다.
+    - `~/.local/bin/sunshine-disable-mouse-accel.sh` 훅 스크립트를 배포하고, `global_prep_cmd`에 등록해 매 세션 시작마다 백그라운드로 실행되게 합니다. 이 훅은 Sunshine이 생성하는 가상 마우스 장치(이름에 `sunshine`이 포함된 libinput 장치)를 찾아 `libinput Accel Profile Enabled`를 flat으로, `libinput Accel Speed`를 -1로 설정해 호스트 X11의 pointer acceleration을 꺼줍니다. 가상 장치는 세션마다 새로 생성되므로 접속할 때마다 자동으로 재적용됩니다.
+    - `~/.config/sunshine/apps.json`을 Desktop 항목 하나만 남긴 내용으로 덮어씁니다(Low Res Desktop/Steam Big Picture 제거). 재설치·재실행 시 매번 이 상태로 리셋됩니다.
     - 설치 후 로그아웃/재로그인이 필요하며, 웹 UI는 `https://<감지된 IP 또는 localhost>:47990`입니다.
     - 아이디/비밀번호와 클라이언트 PIN 페어링은 스크립트가 자동으로 처리하지 않습니다. 아래 "Sunshine 최초 접속 설정"을 따라 직접 진행하세요.
   - `legacy/`에는 더 이상 기본 실행에 포함되지 않는 XRDP/NoMachine 설치 스크립트(`install_xrdp.sh`, `install_nm.sh`, `nm/nm.deb`)가 들어 있습니다.
