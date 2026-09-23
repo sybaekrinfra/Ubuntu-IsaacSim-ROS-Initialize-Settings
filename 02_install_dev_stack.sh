@@ -11,9 +11,11 @@ bash install/install_vscode.sh
 echo "[3/8] Installing Chrome"
 bash install/install_chrome.sh
 
-echo "[4/8] Installing XRDP"
-# bash install/install_xrdp.sh
-bash install/install_nm.sh
+echo "[4/8] Installing Sunshine"
+# Legacy remote desktop options (kept for reference, not used by default):
+# bash install/legacy/install_xrdp.sh
+# bash install/legacy/install_nm.sh
+bash install/install_sunshine.sh
 
 echo "[5/8] Installing Docker"
 curl -fsSL https://get.docker.com -o get-docker.sh

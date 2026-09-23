@@ -33,8 +33,9 @@ ROS 2 Lyrical은 Ubuntu 26.04를 공식 지원하지만, 현재 Isaac Sim의 공
   - 설치가 끝나면 재부팅합니다.
 
 - `02_install_dev_stack.sh`
-  - VSCode, Chrome, XRDP를 설치합니다.
-  - XRDP는 Windows RDP 클라이언트에서 전달한 계정으로 Xorg 세션을 바로 시작하도록 설정합니다.
+  - VSCode, Chrome, Sunshine을 설치합니다.
+  - Sunshine은 Moonlight 클라이언트로 접속하는 자체 호스팅 스트리밍 서버입니다.
+  - XRDP/NoMachine 설치 스크립트는 `install/legacy/`로 옮기고 기본 실행에서는 주석 처리했습니다. 필요하면 직접 호출하세요.
   - Xfce의 기본 Terminal Emulator를 Xfce Terminal로 설정합니다.
   - Docker를 설치합니다.
   - `install/install_ros2.sh`를 호출해 Ubuntu 버전에 맞는 ROS 2를 설치합니다.
@@ -49,6 +50,13 @@ ROS 2 Lyrical은 Ubuntu 26.04를 공식 지원하지만, 현재 Isaac Sim의 공
 
 - `install/`
   - 개별 설치 스크립트가 들어 있습니다.
+  - `install_sunshine.sh`는 Cloudsmith 저장소를 등록하고 Sunshine을 설치한 뒤, 사용자를 `input` 그룹에 추가하고 systemd 사용자 서비스(`app-dev.lizardbyte.app.Sunshine`)를 활성화합니다.
+    - `~/.config/sunshine/sunshine.conf`에 `capture = x11`을 설정합니다.
+    - `nvidia-smi`로 NVIDIA 드라이버가 감지되면 `encoder = nvenc`를 설정하고, 감지되지 않으면 기본값(자동 선택)을 유지합니다.
+    - 로컬 IP를 감지할 수 있으면 `csrf_allowed_origins = https://<감지된 IP>:47990`을 설정합니다.
+    - 설치 후 로그아웃/재로그인이 필요하며, 웹 UI는 `https://<감지된 IP 또는 localhost>:47990`입니다.
+    - 아이디/비밀번호와 클라이언트 PIN 페어링은 스크립트가 자동으로 처리하지 않습니다. 아래 "Sunshine 최초 접속 설정"을 따라 직접 진행하세요.
+  - `legacy/`에는 더 이상 기본 실행에 포함되지 않는 XRDP/NoMachine 설치 스크립트(`install_xrdp.sh`, `install_nm.sh`, `nm/nm.deb`)가 들어 있습니다.
   - `install_ros2.sh`는 `jammy -> humble`, `noble -> jazzy`, `resolute -> lyrical`로 자동 분기합니다.
   - `install_isaaclab.sh`는 기본적으로 Isaac Lab `v3.0.0-beta2`를 `~/IsaacLab`에 클론하고, `~/isaacsim`(Isaac Sim 6.0.1 설치 경로)를 `_isaac_sim`으로 심볼릭 링크한 뒤 `./isaaclab.sh --install`을 실행합니다. `ISAACLAB_VERSION`, `ISAACSIM_DIR`, `ISAACLAB_DIR` 환경 변수로 버전과 경로를 바꿀 수 있습니다. `install/install_isaacsim.sh`로 Isaac Sim을 먼저 설치해야 합니다.
   - `copy_files.sh`는 `desktop/` 폴더의 바로가기 파일 중 `htop.desktop`과 `nvidia-smi.desktop`을 `~/.config/autostart`에 복사하고, 나머지는 `~/Desktop`에 복사합니다.
@@ -58,6 +66,16 @@ ROS 2 Lyrical은 Ubuntu 26.04를 공식 지원하지만, 현재 Isaac Sim의 공
 
 - `desktop/`
   - `.desktop` 바로가기 파일이 들어 있습니다.
+
+## Sunshine 최초 접속 설정
+
+`install_sunshine.sh` 실행이 끝나도 아이디/비밀번호 설정과 클라이언트 페어링은 자동화되지 않습니다. 최초 1회는 직접 다음 순서로 진행해야 합니다.
+
+1. 호스트에서 웹 UI(`https://<호스트 IP>:47990`)에 접속해 아이디/비밀번호를 생성하고 로그인합니다.
+2. 접속하려는 클라이언트 쪽 Moonlight 앱에서 이 호스트로 접속을 시도합니다.
+3. Moonlight에 PIN 번호와 컴퓨터 이름이 표시되면, 방금 로그인한 Sunshine 웹 UI의 PIN 메뉴에서 그 PIN과 컴퓨터 이름을 입력해 페어링을 완료합니다.
+
+이 PIN은 클라이언트를 새로 연결할 때마다 매번 새로 발급되는 값이라 스크립트로 미리 넣어둘 수 없습니다. 새 클라이언트를 추가할 때마다 2~3단계를 반복하세요.
 
 ## 실행 순서
 
@@ -141,10 +159,15 @@ Ubuntu Setting/
 │   ├── install_chrome.sh
 │   ├── install_isaaclab.sh
 │   ├── install_isaacsim.sh
-│   ├── install_xrdp.sh
 │   ├── install_nvidia_container_toolkit.sh
 │   ├── install_ros2.sh
+│   ├── install_sunshine.sh
 │   ├── install_vscode.sh
-│   └── set-cpu-performance.sh
+│   ├── set-cpu-performance.sh
+│   └── legacy/
+│       ├── install_xrdp.sh
+│       ├── install_nm.sh
+│       └── nm/
+│           └── nm.deb
 └── README.md
 ```
