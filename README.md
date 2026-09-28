@@ -52,6 +52,9 @@ ROS 2 Lyrical은 Ubuntu 26.04를 공식 지원하지만, 현재 Isaac Sim의 공
 - `install/`
   - 개별 설치 스크립트가 들어 있습니다.
   - `install_desktop.sh`는 Xfce Desktop 패키지를 설치하고, LightDM을 기본 디스플레이 매니저로 지정한 뒤 `/etc/lightdm/lightdm.conf.d/50-autologin.conf`에 현재 사용자로 자동 로그인(`user-session=xfce`)하도록 설정합니다. 부팅 시 기대하는 흐름은 `LightDM → 자동 로그인 → Xfce 세션 → Sunshine 사용자 서비스 시작 → Moonlight 접속 가능`입니다.
+    - `/usr/share/xsessions/xfce.desktop`이 없으면 중단합니다.
+    - 다른 lightdm 설정 파일(`lightdm.conf` 또는 `lightdm.conf.d/*.conf`)에 이미 `autologin-user`가 지정돼 있으면 충돌을 피하기 위해 덮어쓰지 않고 중단하며, 어느 파일에 무슨 값이 있는지 보여줍니다.
+    - `50-autologin.conf`가 이미 원하는 내용이면 아무것도 하지 않고, 다른 내용이 있던 경우에만 타임스탬프를 붙여 백업한 뒤 덮어씁니다.
   - `install_sunshine.sh`는 Cloudsmith 저장소를 등록하고 Sunshine을 설치한 뒤, 사용자를 `input` 그룹에 추가하고 systemd 사용자 서비스(`app-dev.lizardbyte.app.Sunshine`)를 활성화합니다.
     - `~/.config/sunshine/sunshine.conf`에 `capture = x11`을 설정합니다.
     - `sunshine_name`을 `<사용자 이름>_<로컬 IP 마지막 옥텟>`(예: `sybae_215`)으로 설정합니다(기본값은 PC 호스트명). IP를 감지하지 못하면 사용자 이름만 사용합니다.
@@ -60,7 +63,8 @@ ROS 2 Lyrical은 Ubuntu 26.04를 공식 지원하지만, 현재 Isaac Sim의 공
     - `~/.local/bin/sunshine-disable-mouse-accel.sh` 훅 스크립트를 배포하고, `global_prep_cmd`에 등록해 매 세션 시작마다 백그라운드로 실행되게 합니다. 이 훅은 Sunshine이 생성하는 가상 마우스 장치(이름에 `sunshine`이 포함된 libinput 장치)를 찾아 `libinput Accel Profile Enabled`를 flat으로, `libinput Accel Speed`를 -1로 설정해 호스트 X11의 pointer acceleration을 꺼줍니다. 가상 장치는 세션마다 새로 생성되므로 접속할 때마다 자동으로 재적용됩니다.
     - `~/.config/sunshine/apps.json`을 Desktop 항목 하나만 남긴 내용으로 덮어씁니다(Low Res Desktop/Steam Big Picture 제거). 재설치·재실행 시 매번 이 상태로 리셋됩니다.
     - `sunshine --creds`로 웹 UI 로그인 아이디/비밀번호를 `<사용자 이름> / 1`로 자동 설정합니다. 비밀번호가 매우 단순하니 필요하면 웹 UI에서 바꾸세요.
-    - systemd 사용자 서비스에 override(`ExecStartPre=/bin/sleep 5`, `Restart=on-failure`, `RestartSec=5`)를 추가해, 부팅 직후 Xfce 세션이 완전히 뜨기 전에 Sunshine이 너무 일찍 시작되는 것을 방지합니다.
+    - Sunshine 원본 systemd 유닛에는 이미 `ExecStartPre=/bin/sleep 5`, `Restart=on-failure`, `RestartSec=5`가 들어있습니다. 예전 버전의 이 스크립트가 만들어 둔, 그것과 완전히 중복되는 override(`~/.config/systemd/user/app-dev.lizardbyte.app.Sunshine.service.d/override.conf`)가 남아 있으면 제거하고, 다른 내용이 섞여 있으면 손대지 않습니다.
+    - Xfce는 로그인해도 `graphical-session.target`을 활성화하지 않는 경우가 있어 `WantedBy=graphical-session.target`만으로는 서비스가 자동 시작되지 않을 수 있습니다. 이를 보완하기 위해 `~/.config/autostart/sunshine-systemd.desktop`을 만들어 Xfce 로그인 직후 `systemctl --user start app-dev.lizardbyte.app.Sunshine.service`를 명시적으로 실행합니다.
     - 설치 후 로그아웃/재로그인이 필요하며, 웹 UI는 `https://<감지된 IP 또는 localhost>:47990`입니다.
     - 클라이언트 PIN 페어링은 스크립트가 자동으로 처리하지 않습니다. 아래 "Sunshine 최초 접속 설정"을 따라 직접 진행하세요.
   - `legacy/`에는 더 이상 기본 실행에 포함되지 않는 XRDP/NoMachine 설치 스크립트(`install_xrdp.sh`, `install_nm.sh`, `nm/nm.deb`)가 들어 있습니다.
@@ -93,9 +97,19 @@ LightDM
   ↓
 Xfce 세션 생성
   ↓
-Sunshine 사용자 서비스 시작 (부팅 직후 5초 지연 후)
+Xfce autostart (~/.config/autostart/sunshine-systemd.desktop)
+  ↓
+systemctl --user start app-dev.lizardbyte.app.Sunshine.service
   ↓
 Moonlight 접속 가능
+```
+
+재부팅 후 상태를 확인하려면:
+
+```bash
+loginctl list-sessions
+systemctl --user status app-dev.lizardbyte.app.Sunshine.service --no-pager
+journalctl --user -u app-dev.lizardbyte.app.Sunshine.service -b --no-pager | tail -80
 ```
 
 ## 실행 순서

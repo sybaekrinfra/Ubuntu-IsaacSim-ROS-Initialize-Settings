@@ -105,20 +105,55 @@ WEBUI_PASSWORD="1"
 sunshine --creds "${USER}" "${WEBUI_PASSWORD}"
 echo "  - 웹 UI 아이디: ${USER} / 비밀번호: ${WEBUI_PASSWORD} (매우 단순한 비밀번호입니다. 필요하면 웹 UI에서 나중에 바꾸세요.)"
 
-echo "[8/9] 부팅 직후 지연 및 재시작 정책 설정"
-OVERRIDE_DIR="$HOME/.config/systemd/user/app-dev.lizardbyte.app.Sunshine.service.d"
-mkdir -p "${OVERRIDE_DIR}"
-cat > "${OVERRIDE_DIR}/override.conf" <<'EOF'
-[Service]
+echo "[8/9] 중복 override 정리 및 XFCE autostart로 자동 시작 설정"
+SUNSHINE_UNIT="app-dev.lizardbyte.app.Sunshine.service"
+OVERRIDE_DIR="$HOME/.config/systemd/user/${SUNSHINE_UNIT}.d"
+OVERRIDE_FILE="${OVERRIDE_DIR}/override.conf"
+
+# Sunshine 원본 unit에 이미 ExecStartPre=/bin/sleep 5 / Restart=on-failure / RestartSec=5가
+# 들어있어서, 예전 버전의 이 스크립트가 만들어 둔 동일 내용의 override는 그냥 중복이다. 남아있다면 정리한다.
+REDUNDANT_OVERRIDE="[Service]
 ExecStartPre=/bin/sleep 5
 Restart=on-failure
-RestartSec=5
-EOF
+RestartSec=5"
+
+if [ -f "${OVERRIDE_FILE}" ]; then
+    if [ "$(cat "${OVERRIDE_FILE}")" = "${REDUNDANT_OVERRIDE}" ]; then
+        echo "  - 원본 unit과 중복되는 override(${OVERRIDE_FILE})를 제거합니다."
+        rm -f "${OVERRIDE_FILE}"
+        rmdir --ignore-fail-on-non-empty "${OVERRIDE_DIR}" 2>/dev/null || true
+    else
+        echo "  - ${OVERRIDE_FILE}에 다른 설정이 있어 건드리지 않고 그대로 둡니다:"
+        sed 's/^/      /' "${OVERRIDE_FILE}"
+    fi
+fi
 systemctl --user daemon-reload
 
+# XFCE는 로그인해도 graphical-session.target을 활성화하지 않는 경우가 있어
+# WantedBy=graphical-session.target만으로는 자동 시작이 보장되지 않는다.
+# XFCE 자체 autostart로 로그인 직후 명시적으로 서비스를 시작시킨다.
+AUTOSTART_DIR="$HOME/.config/autostart"
+AUTOSTART_FILE="${AUTOSTART_DIR}/sunshine-systemd.desktop"
+mkdir -p "${AUTOSTART_DIR}"
+DESIRED_AUTOSTART="[Desktop Entry]
+Type=Application
+Name=Sunshine
+Comment=Start Sunshine systemd user service after XFCE login
+Exec=systemctl --user start ${SUNSHINE_UNIT}
+Terminal=false
+Hidden=false
+X-GNOME-Autostart-enabled=true"
+
+if [ -f "${AUTOSTART_FILE}" ] && [ "$(cat "${AUTOSTART_FILE}")" = "${DESIRED_AUTOSTART}" ]; then
+    echo "  - ${AUTOSTART_FILE}이 이미 최신 상태입니다."
+else
+    printf '%s\n' "${DESIRED_AUTOSTART}" > "${AUTOSTART_FILE}"
+    echo "  - ${AUTOSTART_FILE} 생성/갱신 완료."
+fi
+
 echo "[9/9] Sunshine 사용자 서비스 활성화"
-systemctl --user --now enable app-dev.lizardbyte.app.Sunshine
-systemctl --user restart app-dev.lizardbyte.app.Sunshine
+systemctl --user --now enable "${SUNSHINE_UNIT}"
+systemctl --user restart "${SUNSHINE_UNIT}"
 
 echo "Sunshine 설치 완료"
 echo "input 그룹 적용을 위해 로그아웃 후 다시 로그인하세요."
@@ -128,3 +163,8 @@ if [ -n "${LOCAL_IP}" ]; then
 else
     echo "웹 UI: https://localhost:47990"
 fi
+echo ""
+echo "재부팅 후 확인 명령:"
+echo "  loginctl list-sessions"
+echo "  systemctl --user status ${SUNSHINE_UNIT} --no-pager"
+echo "  journalctl --user -u ${SUNSHINE_UNIT} -b --no-pager | tail -80"
