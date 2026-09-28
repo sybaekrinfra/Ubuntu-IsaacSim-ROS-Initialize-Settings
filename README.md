@@ -3,7 +3,7 @@
 이 저장소는 새 Ubuntu 워크스테이션을 빠르게 세팅하기 위한 스크립트 모음입니다.
 
 > [!CAUTION]
-> 현재 설치는 Ubuntu Server 기준입니다. Ubuntu Desktop에서 GNOME을 계속 사용하려면 Xfce Desktop 설치와 `.desktop` 바로가기 복사 단계를 건너뛰세요.
+> 현재 설치는 Ubuntu Server 기준입니다. Ubuntu Desktop에서 GNOME을 계속 사용하려면 `install/install_desktop.sh`(Xfce + LightDM 자동 로그인)와 `.desktop` 바로가기 복사 단계를 건너뛰세요. LightDM을 기본 디스플레이 매니저로 지정하므로 이미 GDM 등을 쓰고 있다면 충돌할 수 있습니다.
 
 현재 구조는 하나의 공통 스크립트 세트로 통합되어 있고, Ubuntu 버전에 맞는 ROS 2 배포판을 자동 선택합니다.
 
@@ -33,8 +33,9 @@ ROS 2 Lyrical은 Ubuntu 26.04를 공식 지원하지만, 현재 Isaac Sim의 공
   - 설치가 끝나면 재부팅합니다.
 
 - `02_install_dev_stack.sh`
-  - VSCode, Chrome, Sunshine을 설치합니다.
+  - VSCode, Chrome, Xfce Desktop, Sunshine을 설치합니다.
   - Sunshine은 Moonlight 클라이언트로 접속하는 자체 호스팅 스트리밍 서버입니다.
+  - `install/install_desktop.sh`로 Xfce Desktop을 설치하고 LightDM 자동 로그인을 구성해, 재부팅 후 사람이 직접 로그인하지 않아도 Xfce 세션과 Sunshine이 자동으로 뜨도록 합니다.
   - XRDP/NoMachine 설치 스크립트는 `install/legacy/`로 옮기고 기본 실행에서는 주석 처리했습니다. 필요하면 직접 호출하세요.
   - Xfce의 기본 Terminal Emulator를 Xfce Terminal로 설정합니다.
   - Docker를 설치합니다.
@@ -50,6 +51,7 @@ ROS 2 Lyrical은 Ubuntu 26.04를 공식 지원하지만, 현재 Isaac Sim의 공
 
 - `install/`
   - 개별 설치 스크립트가 들어 있습니다.
+  - `install_desktop.sh`는 Xfce Desktop 패키지를 설치하고, LightDM을 기본 디스플레이 매니저로 지정한 뒤 `/etc/lightdm/lightdm.conf.d/50-autologin.conf`에 현재 사용자로 자동 로그인(`user-session=xfce`)하도록 설정합니다. 부팅 시 기대하는 흐름은 `LightDM → 자동 로그인 → Xfce 세션 → Sunshine 사용자 서비스 시작 → Moonlight 접속 가능`입니다.
   - `install_sunshine.sh`는 Cloudsmith 저장소를 등록하고 Sunshine을 설치한 뒤, 사용자를 `input` 그룹에 추가하고 systemd 사용자 서비스(`app-dev.lizardbyte.app.Sunshine`)를 활성화합니다.
     - `~/.config/sunshine/sunshine.conf`에 `capture = x11`을 설정합니다.
     - `sunshine_name`을 `<사용자 이름>_<로컬 IP 마지막 옥텟>`(예: `sybae_215`)으로 설정합니다(기본값은 PC 호스트명). IP를 감지하지 못하면 사용자 이름만 사용합니다.
@@ -58,6 +60,7 @@ ROS 2 Lyrical은 Ubuntu 26.04를 공식 지원하지만, 현재 Isaac Sim의 공
     - `~/.local/bin/sunshine-disable-mouse-accel.sh` 훅 스크립트를 배포하고, `global_prep_cmd`에 등록해 매 세션 시작마다 백그라운드로 실행되게 합니다. 이 훅은 Sunshine이 생성하는 가상 마우스 장치(이름에 `sunshine`이 포함된 libinput 장치)를 찾아 `libinput Accel Profile Enabled`를 flat으로, `libinput Accel Speed`를 -1로 설정해 호스트 X11의 pointer acceleration을 꺼줍니다. 가상 장치는 세션마다 새로 생성되므로 접속할 때마다 자동으로 재적용됩니다.
     - `~/.config/sunshine/apps.json`을 Desktop 항목 하나만 남긴 내용으로 덮어씁니다(Low Res Desktop/Steam Big Picture 제거). 재설치·재실행 시 매번 이 상태로 리셋됩니다.
     - `sunshine --creds`로 웹 UI 로그인 아이디/비밀번호를 `<사용자 이름> / 1`로 자동 설정합니다. 비밀번호가 매우 단순하니 필요하면 웹 UI에서 바꾸세요.
+    - systemd 사용자 서비스에 override(`ExecStartPre=/bin/sleep 5`, `Restart=on-failure`, `RestartSec=5`)를 추가해, 부팅 직후 Xfce 세션이 완전히 뜨기 전에 Sunshine이 너무 일찍 시작되는 것을 방지합니다.
     - 설치 후 로그아웃/재로그인이 필요하며, 웹 UI는 `https://<감지된 IP 또는 localhost>:47990`입니다.
     - 클라이언트 PIN 페어링은 스크립트가 자동으로 처리하지 않습니다. 아래 "Sunshine 최초 접속 설정"을 따라 직접 진행하세요.
   - `legacy/`에는 더 이상 기본 실행에 포함되지 않는 XRDP/NoMachine 설치 스크립트(`install_xrdp.sh`, `install_nm.sh`, `nm/nm.deb`)가 들어 있습니다.
@@ -80,6 +83,20 @@ ROS 2 Lyrical은 Ubuntu 26.04를 공식 지원하지만, 현재 Isaac Sim의 공
 3. Moonlight에 PIN 번호와 컴퓨터 이름이 표시되면, 방금 로그인한 Sunshine 웹 UI의 PIN 메뉴에서 그 PIN과 (원하는) 기기 이름을 입력해 페어링을 완료합니다. 이 기기 이름은 클라이언트를 구분하기 위한 참고용 라벨일 뿐이라 아무 값이나 입력해도 됩니다.
 
 이 PIN은 클라이언트를 새로 연결할 때마다 매번 새로 발급되는 값이라 스크립트로 미리 넣어둘 수 없습니다. 새 클라이언트를 추가할 때마다 2~3단계를 반복하세요.
+
+`02_install_dev_stack.sh` 실행 후 재부팅하면 기대하는 부팅 흐름은 다음과 같습니다.
+
+```text
+LightDM
+  ↓
+<사용자> 자동 로그인
+  ↓
+Xfce 세션 생성
+  ↓
+Sunshine 사용자 서비스 시작 (부팅 직후 5초 지연 후)
+  ↓
+Moonlight 접속 가능
+```
 
 ## 실행 순서
 
@@ -161,6 +178,7 @@ Ubuntu Setting/
 │   ├── copy_files.sh
 │   ├── configure_xfce_panel.sh
 │   ├── install_chrome.sh
+│   ├── install_desktop.sh
 │   ├── install_isaaclab.sh
 │   ├── install_isaacsim.sh
 │   ├── install_nvidia_container_toolkit.sh
