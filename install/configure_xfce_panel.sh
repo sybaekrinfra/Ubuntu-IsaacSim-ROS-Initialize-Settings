@@ -62,6 +62,26 @@ fi
 set_property xsettings /Gtk/FontName string "Noto Sans 9"
 set_property xfwm4 /general/title_font string "Noto Sans Bold 9"
 
+echo "Applying Xubuntu default wallpaper"
+system_desktop_xml="/etc/xdg/xfce4/xfconf/xfce-perchannel-xml/xfce4-desktop.xml"
+if [ -f "$system_desktop_xml" ]; then
+    wallpaper_path="$(grep -o '<property name="last-image" type="string" value="[^"]*"' "$system_desktop_xml" | head -n1 | sed -E 's/.*value="([^"]*)".*/\1/')"
+    if [ -n "$wallpaper_path" ] && [ -f "$wallpaper_path" ]; then
+        mapfile -t backdrop_props < <(xfconf-query -c xfce4-desktop -l 2>/dev/null | grep -E '/last-image$')
+        if [ "${#backdrop_props[@]}" -eq 0 ]; then
+            backdrop_props=(/backdrop/screen0/monitor0/workspace0/last-image)
+        fi
+        for prop in "${backdrop_props[@]}"; do
+            set_property xfce4-desktop "$prop" string "$wallpaper_path"
+        done
+        echo "  -> $wallpaper_path"
+    else
+        echo "  Xubuntu 기본 배경화면 경로를 찾지 못해 건너뜁니다."
+    fi
+else
+    echo "  xubuntu-default-settings가 설치되어 있지 않아 배경화면 설정을 건너뜁니다."
+fi
+
 mkdir -p "$xfce_config_dir" "$panel_config_dir"
 backup_dir="$xfce_config_dir/panel-backup-before-layout-v5"
 if [ ! -d "$backup_dir" ]; then

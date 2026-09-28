@@ -36,18 +36,24 @@ sudo apt install -y \
     wget \
     curl
 
-echo "[3/5] CPU 성능 모드로 설정"
+echo "[3/6] CPU 성능 모드로 설정"
 if command -v systemd-detect-virt >/dev/null 2>&1 && systemd-detect-virt --vm --quiet; then
     echo "VM 환경이므로 CPU performance 설정을 건너뜁니다."
 else
     bash install/set-cpu-performance.sh
 fi
 
-echo "[4/5] NVIDIA 드라이버 설치"
+echo "[4/6] 부팅 시간 단축을 위해 네트워크 대기 서비스 비활성화"
+sudo systemctl disable systemd-networkd-wait-online.service 2>/dev/null || true
+sudo systemctl mask systemd-networkd-wait-online.service 2>/dev/null || true
+sudo systemctl disable NetworkManager-wait-online.service 2>/dev/null || true
+sudo systemctl mask NetworkManager-wait-online.service 2>/dev/null || true
+
+echo "[5/6] NVIDIA 드라이버 설치"
 ubuntu-drivers devices
 sudo ubuntu-drivers install nvidia:580
 
-echo "[5/5] 한글 입력기 ibus-hangul 설치"
+echo "[6/6] 한글 입력기 ibus-hangul 설치"
 sudo apt install ibus-hangul -y
 
 echo "기본 설치 완료. 이제 재부팅합니다."

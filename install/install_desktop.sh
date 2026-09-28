@@ -15,7 +15,8 @@ sudo DEBIAN_FRONTEND=noninteractive apt install -y \
     pavucontrol \
     fonts-noto-core \
     greybird-gtk-theme \
-    elementary-xfce-icon-theme
+    elementary-xfce-icon-theme \
+    xubuntu-default-settings
 
 echo "[2/4] LightDM을 기본 디스플레이 매니저로 지정하고 설치"
 echo "lightdm shared/default-x-display-manager select lightdm" | sudo debconf-set-selections
