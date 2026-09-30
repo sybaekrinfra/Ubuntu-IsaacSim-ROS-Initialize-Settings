@@ -73,7 +73,7 @@ for candidate in \
     fi
 done
 if [ -n "$system_desktop_xml" ]; then
-    wallpaper_path="$(grep -o '<property name="last-image" type="string" value="[^"]*"' "$system_desktop_xml" | head -n1 | sed -E 's/.*value="([^"]*)".*/\1/')"
+    wallpaper_path="$(grep -o '<property name="\(last-image\|image-path\)" type="string" value="[^"]*"' "$system_desktop_xml" | head -n1 | sed -E 's/.*value="([^"]*)".*/\1/')"
     if [ -n "$wallpaper_path" ] && [ -f "$wallpaper_path" ]; then
         mapfile -t backdrop_props < <(xfconf-query -c xfce4-desktop -l 2>/dev/null | grep -E '/last-image$')
         if [ "${#backdrop_props[@]}" -eq 0 ]; then
