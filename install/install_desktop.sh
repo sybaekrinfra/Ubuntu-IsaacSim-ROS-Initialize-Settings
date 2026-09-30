@@ -22,11 +22,14 @@ echo "[2/4] LightDM을 기본 디스플레이 매니저로 지정하고 설치"
 echo "lightdm shared/default-x-display-manager select lightdm" | sudo debconf-set-selections
 sudo DEBIAN_FRONTEND=noninteractive apt install -y lightdm
 
-echo "[3/4] LightDM 자동 로그인 설정 (${USER} / Xfce)"
+echo "[3/4] LightDM 자동 로그인 설정 (${USER} / Xubuntu)"
 
-XFCE_SESSION_FILE="/usr/share/xsessions/xfce.desktop"
-if [ ! -f "${XFCE_SESSION_FILE}" ]; then
-    echo "오류: ${XFCE_SESSION_FILE}이 없습니다. Xfce 세션 설치를 확인한 뒤 다시 실행하세요." >&2
+# user-session=xfce(순정 Xfce 세션)로 로그인하면 XDG_CONFIG_DIRS에
+# /etc/xdg/xdg-xubuntu가 포함되지 않아 xubuntu-default-settings가 제공하는
+# 배경화면/패널 등 기본값을 못 찾는다. 반드시 xubuntu 세션으로 로그인해야 한다.
+XUBUNTU_SESSION_FILE="/usr/share/xsessions/xubuntu.desktop"
+if [ ! -f "${XUBUNTU_SESSION_FILE}" ]; then
+    echo "오류: ${XUBUNTU_SESSION_FILE}이 없습니다. xubuntu-default-settings 설치를 확인한 뒤 다시 실행하세요." >&2
     exit 1
 fi
 
@@ -34,7 +37,7 @@ AUTOLOGIN_FILE="/etc/lightdm/lightdm.conf.d/50-autologin.conf"
 DESIRED_AUTOLOGIN="[Seat:*]
 autologin-user=${USER}
 autologin-user-timeout=0
-user-session=xfce"
+user-session=xubuntu"
 
 sudo mkdir -p /etc/lightdm/lightdm.conf.d
 
@@ -65,5 +68,5 @@ echo "[4/4] 설정 확인"
 cat "${AUTOLOGIN_FILE}"
 
 echo "Xfce Desktop / LightDM 자동 로그인 설정 완료"
-echo "재부팅하면 ${USER} 계정으로 자동 로그인되어 Xfce 세션이 시작되고,"
+echo "재부팅하면 ${USER} 계정으로 자동 로그인되어 Xubuntu 세션이 시작되고,"
 echo "그 세션 안에서 Sunshine 사용자 서비스도 함께 시작됩니다."

@@ -63,8 +63,16 @@ set_property xsettings /Gtk/FontName string "Noto Sans 9"
 set_property xfwm4 /general/title_font string "Noto Sans Bold 9"
 
 echo "Applying Xubuntu default wallpaper"
-system_desktop_xml="/etc/xdg/xfce4/xfconf/xfce-perchannel-xml/xfce4-desktop.xml"
-if [ -f "$system_desktop_xml" ]; then
+system_desktop_xml=""
+for candidate in \
+    /etc/xdg/xdg-xubuntu/xfce4/xfconf/xfce-perchannel-xml/xfce4-desktop.xml \
+    /etc/xdg/xfce4/xfconf/xfce-perchannel-xml/xfce4-desktop.xml; do
+    if [ -f "$candidate" ]; then
+        system_desktop_xml="$candidate"
+        break
+    fi
+done
+if [ -n "$system_desktop_xml" ]; then
     wallpaper_path="$(grep -o '<property name="last-image" type="string" value="[^"]*"' "$system_desktop_xml" | head -n1 | sed -E 's/.*value="([^"]*)".*/\1/')"
     if [ -n "$wallpaper_path" ] && [ -f "$wallpaper_path" ]; then
         mapfile -t backdrop_props < <(xfconf-query -c xfce4-desktop -l 2>/dev/null | grep -E '/last-image$')

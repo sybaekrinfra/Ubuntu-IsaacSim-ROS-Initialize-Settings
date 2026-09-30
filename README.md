@@ -51,9 +51,10 @@ ROS 2 Lyrical은 Ubuntu 26.04를 공식 지원하지만, 현재 Isaac Sim의 공
 
 - `install/`
   - 개별 설치 스크립트가 들어 있습니다.
-  - `install_desktop.sh`는 Xfce Desktop 패키지(`xubuntu-default-settings` 포함)를 설치하고, LightDM을 기본 디스플레이 매니저로 지정한 뒤 `/etc/lightdm/lightdm.conf.d/50-autologin.conf`에 현재 사용자로 자동 로그인(`user-session=xfce`)하도록 설정합니다. 부팅 시 기대하는 흐름은 `LightDM → 자동 로그인 → Xfce 세션 → Sunshine 사용자 서비스 시작 → Moonlight 접속 가능`입니다.
+  - `install_desktop.sh`는 Xfce Desktop 패키지(`xubuntu-default-settings` 포함)를 설치하고, LightDM을 기본 디스플레이 매니저로 지정한 뒤 `/etc/lightdm/lightdm.conf.d/50-autologin.conf`에 현재 사용자로 자동 로그인(`user-session=xubuntu`)하도록 설정합니다. 부팅 시 기대하는 흐름은 `LightDM → 자동 로그인 → Xubuntu 세션 → Sunshine 사용자 서비스 시작 → Moonlight 접속 가능`입니다.
     - `xubuntu-default-settings`는 Xubuntu 기본 배경화면/테마 정보(`xubuntu-wallpapers` 등)를 함께 가져옵니다. 순정 `xfce4`만 설치하면 파란 배경에 Xfce 마스코트(쥐) 로고가 있는 기본 배경화면이 뜨는데, 이 패키지가 있어야 `configure_xfce_panel.sh`가 실제 Xubuntu 배경화면 경로를 알아낼 수 있습니다.
-    - `/usr/share/xsessions/xfce.desktop`이 없으면 중단합니다.
+    - `user-session`은 `xfce`가 아니라 반드시 `xubuntu`여야 합니다. `xfce` 세션으로 로그인하면 `XDG_CONFIG_DIRS`에 `/etc/xdg/xdg-xubuntu`가 포함되지 않아서, `xubuntu-default-settings`가 실제로 설치한 `/etc/xdg/xdg-xubuntu/xfce4/xfconf/xfce-perchannel-xml/xfce4-desktop.xml`(배경화면 등 기본값)을 세션이 아예 찾지 못합니다.
+    - `/usr/share/xsessions/xubuntu.desktop`이 없으면 중단합니다.
     - 다른 lightdm 설정 파일(`lightdm.conf` 또는 `lightdm.conf.d/*.conf`)에 이미 `autologin-user`가 지정돼 있으면 충돌을 피하기 위해 덮어쓰지 않고 중단하며, 어느 파일에 무슨 값이 있는지 보여줍니다.
     - `50-autologin.conf`가 이미 원하는 내용이면 아무것도 하지 않고, 다른 내용이 있던 경우에만 타임스탬프를 붙여 백업한 뒤 덮어씁니다.
   - `install_sunshine.sh`는 Cloudsmith 저장소를 등록하고 Sunshine을 설치한 뒤, 사용자를 `input` 그룹에 추가하고 systemd 사용자 서비스(`app-dev.lizardbyte.app.Sunshine`)를 활성화합니다.
@@ -72,7 +73,7 @@ ROS 2 Lyrical은 Ubuntu 26.04를 공식 지원하지만, 현재 Isaac Sim의 공
   - `install_ros2.sh`는 `jammy -> humble`, `noble -> jazzy`, `resolute -> lyrical`로 자동 분기합니다.
   - `install_isaaclab.sh`는 기본적으로 Isaac Lab `v3.0.0-beta2`를 `~/IsaacLab`에 클론하고, `~/isaacsim`(Isaac Sim 6.0.1 설치 경로)를 `_isaac_sim`으로 심볼릭 링크한 뒤 `./isaaclab.sh --install`을 실행합니다. `ISAACLAB_VERSION`, `ISAACSIM_DIR`, `ISAACLAB_DIR` 환경 변수로 버전과 경로를 바꿀 수 있습니다. `install/install_isaacsim.sh`로 Isaac Sim을 먼저 설치해야 합니다.
   - `copy_files.sh`는 `desktop/` 폴더의 바로가기 파일 중 `htop.desktop`과 `nvidia-smi.desktop`을 `~/.config/autostart`에 복사하고, 나머지는 `~/Desktop`에 복사합니다.
-  - 바로가기 복사 후 사용자별 기본 설정과 무관하게 Greybird/elementary-xfce 테마, Xubuntu 기본 배경화면, 단일 하단 패널을 구성합니다. 배경화면은 `/etc/xdg/xfce4/xfconf/xfce-perchannel-xml/xfce4-desktop.xml`(`xubuntu-default-settings`가 설치한 시스템 기본값)에서 실제 경로를 읽어와, 현재 세션에 존재하는 모든 모니터의 `last-image` 속성에 그대로 적용합니다.
+  - 바로가기 복사 후 사용자별 기본 설정과 무관하게 Greybird/elementary-xfce 테마, Xubuntu 기본 배경화면, 단일 하단 패널을 구성합니다. 배경화면은 `/etc/xdg/xdg-xubuntu/xfce4/xfconf/xfce-perchannel-xml/xfce4-desktop.xml`(`xubuntu-default-settings`가 설치한 시스템 기본값, `xfce` 세션에서는 안 보이고 `xubuntu` 세션에서만 XDG_CONFIG_DIRS에 잡히는 경로라 `/etc/xdg/xfce4/...`도 폴백으로 확인)에서 실제 경로를 읽어와, 현재 세션에 존재하는 모든 모니터의 `last-image` 속성에 그대로 적용합니다.
   - 하단 패널은 Whisker Menu, 작업 창 버튼, Terminal Emulator/Chrome/Visual Studio Code/Isaac Sim 바로가기, 알림/네트워크/배터리/소리/시계 순서로 구성됩니다. Xfce 세션이 실행 중이 아니면 다음 로그인 때 자동 적용됩니다.
   - 기존 패널 설정은 `~/.config/xfce4/panel-backup-before-layout-v5/`에 한 번 백업합니다.
 
