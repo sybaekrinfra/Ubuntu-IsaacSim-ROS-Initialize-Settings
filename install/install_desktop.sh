@@ -22,6 +22,15 @@ echo "[2/4] LightDM을 기본 디스플레이 매니저로 지정하고 설치"
 echo "lightdm shared/default-x-display-manager select lightdm" | sudo debconf-set-selections
 sudo DEBIAN_FRONTEND=noninteractive apt install -y lightdm
 
+# lightdm이 이미 설치된 상태에서 GDM 등을 쓰고 있었다면 위 설치만으로는 기본값이 바뀌지 않는다.
+if [ "$(cat /etc/X11/default-display-manager 2>/dev/null)" != "/usr/sbin/lightdm" ]; then
+    echo "  - 기본 디스플레이 매니저를 LightDM으로 변경합니다."
+    sudo DEBIAN_FRONTEND=noninteractive dpkg-reconfigure lightdm
+    echo "/usr/sbin/lightdm" | sudo tee /etc/X11/default-display-manager > /dev/null
+    sudo ln -sf /lib/systemd/system/lightdm.service /etc/systemd/system/display-manager.service
+    sudo systemctl daemon-reload
+fi
+
 echo "[3/4] LightDM 자동 로그인 설정 (${USER} / Xubuntu)"
 
 # user-session=xfce(순정 Xfce 세션)로 로그인하면 XDG_CONFIG_DIRS에

@@ -26,6 +26,14 @@ ROS 2 Lyrical은 Ubuntu 26.04를 공식 지원하지만, 현재 Isaac Sim의 공
 
 ## 구성
 
+- `00_modify.sh`
+  - 이미 세팅된 PC(NoMachine/XRDP로 쓰던 PC, `xfce` 세션으로 자동 로그인하던 PC, GDM을 쓰던 PC 등)를 현재 저장소 기준 설정으로 갱신합니다. 여러 번 실행해도 안전하며, 저장소를 업데이트(`git pull`)한 뒤 다시 실행하면 됩니다.
+  - `install/install_desktop.sh`로 Xfce/Xubuntu 기본 설정 패키지를 설치하고, 기본 디스플레이 매니저를 LightDM으로 바꾼 뒤 `user-session=xubuntu` 자동 로그인을 설정합니다.
+  - Sunshine이 설치되어 있지 않을 때만 `install/install_sunshine.sh`를 실행합니다. 이미 설치된 PC에서는 페어링이나 비밀번호 같은 기존 설정을 건드리지 않습니다.
+  - 패널 레이아웃 마커(`~/.config/xfce4/panel/.xubuntu-layout-v5`)를 지운 뒤 `install/copy_files.sh`를 실행해 바로가기, 패널, 배경화면을 다시 구성합니다. 로컬 Xubuntu 세션에서 실행하면 바로 적용하고, XRDP/NoMachine 가상 세션이나 SSH에서 실행하면 다음 Xubuntu 로그인 때 적용합니다(배경화면은 현재 세션에 있는 모니터에만 적용되기 때문입니다).
+  - NoMachine/XRDP는 설치되어 있어도 변경하지 않습니다.
+  - 마지막에 재부팅 여부를 묻습니다.
+
 - `01_install_base.sh`
   - 기본 패키지를 설치합니다.
   - `install/set-cpu-performance.sh`를 호출해 CPU governor를 performance로 설정합니다.
@@ -51,7 +59,7 @@ ROS 2 Lyrical은 Ubuntu 26.04를 공식 지원하지만, 현재 Isaac Sim의 공
 
 - `install/`
   - 개별 설치 스크립트가 들어 있습니다.
-  - `install_desktop.sh`는 Xfce Desktop 패키지(`xubuntu-default-settings` 포함)를 설치하고, LightDM을 기본 디스플레이 매니저로 지정한 뒤 `/etc/lightdm/lightdm.conf.d/50-autologin.conf`에 현재 사용자로 자동 로그인(`user-session=xubuntu`)하도록 설정합니다. 부팅 시 기대하는 흐름은 `LightDM → 자동 로그인 → Xubuntu 세션 → Sunshine 사용자 서비스 시작 → Moonlight 접속 가능`입니다.
+  - `install_desktop.sh`는 Xfce Desktop 패키지(`xubuntu-default-settings` 포함)를 설치하고, LightDM을 기본 디스플레이 매니저로 지정한 뒤(GDM 등 다른 디스플레이 매니저를 쓰고 있었다면 LightDM으로 전환) `/etc/lightdm/lightdm.conf.d/50-autologin.conf`에 현재 사용자로 자동 로그인(`user-session=xubuntu`)하도록 설정합니다. 부팅 시 기대하는 흐름은 `LightDM → 자동 로그인 → Xubuntu 세션 → Sunshine 사용자 서비스 시작 → Moonlight 접속 가능`입니다.
     - `xubuntu-default-settings`는 Xubuntu 기본 배경화면/테마 정보(`xubuntu-wallpapers` 등)를 함께 가져옵니다. 순정 `xfce4`만 설치하면 파란 배경에 Xfce 마스코트(쥐) 로고가 있는 기본 배경화면이 뜨는데, 이 패키지가 있어야 `configure_xfce_panel.sh`가 실제 Xubuntu 배경화면 경로를 알아낼 수 있습니다.
     - `user-session`은 `xfce`가 아니라 반드시 `xubuntu`여야 합니다. `xfce` 세션으로 로그인하면 `XDG_CONFIG_DIRS`에 `/etc/xdg/xdg-xubuntu`가 포함되지 않아서, `xubuntu-default-settings`가 실제로 설치한 `/etc/xdg/xdg-xubuntu/xfce4/xfconf/xfce-perchannel-xml/xfce4-desktop.xml`(배경화면 등 기본값)을 세션이 아예 찾지 못합니다.
     - `/usr/share/xsessions/xubuntu.desktop`이 없으면 중단합니다.
@@ -116,6 +124,13 @@ journalctl --user -u app-dev.lizardbyte.app.Sunshine.service -b --no-pager | tai
 
 ## 실행 순서
 
+이미 세팅된 PC의 설정만 최신으로 바꾸려면 다음처럼 실행합니다.
+
+```bash
+git pull
+bash 00_modify.sh
+```
+
 Ubuntu 22.04/24.04에서 전체 스택을 설치하는 순서입니다.
 
 1. `01_install_base.sh`를 실행합니다.
@@ -179,6 +194,7 @@ bash install/install_ros2.sh
 
 ```text
 Ubuntu Setting/
+├── 00_modify.sh
 ├── 01_install_base.sh
 ├── 02_install_dev_stack.sh
 ├── 03_install_isaac_lab.sh
