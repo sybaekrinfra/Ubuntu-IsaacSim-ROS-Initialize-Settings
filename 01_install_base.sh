@@ -51,7 +51,7 @@ sudo systemctl mask NetworkManager-wait-online.service 2>/dev/null || true
 
 echo "[5/6] NVIDIA 드라이버 설치"
 ubuntu-drivers devices
-sudo ubuntu-drivers install nvidia:580
+sudo ubuntu-drivers install
 
 echo "[6/6] 한글 입력기 ibus-hangul 설치"
 sudo apt install ibus-hangul -y
