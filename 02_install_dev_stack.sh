@@ -34,6 +34,7 @@ bash install/install_nvidia_container_toolkit.sh
 
 echo "[9/9] Installing Isaac Sim and desktop shortcuts"
 bash install/install_isaacsim.sh
+bash install/install_omniverse_log_cleanup.sh
 bash install/copy_files.sh
 
 echo "Development stack install complete. Rebooting now."

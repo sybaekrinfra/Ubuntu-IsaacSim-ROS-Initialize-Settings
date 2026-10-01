@@ -71,6 +71,10 @@ ROS 2 Lyrical은 Ubuntu 26.04를 공식 지원하지만, 현재 Isaac Sim의 공
     - 클라이언트 PIN 페어링은 스크립트가 자동으로 처리하지 않습니다. 아래 "Sunshine 최초 접속 설정"을 따라 직접 진행하세요.
   - `legacy/`에는 더 이상 기본 실행에 포함되지 않는 XRDP/NoMachine 설치 스크립트(`install_xrdp.sh`, `install_nm.sh`, `nm/nm.deb`)가 들어 있습니다.
   - `install_ros2.sh`는 `jammy -> humble`, `noble -> jazzy`, `resolute -> lyrical`로 자동 분기합니다.
+  - `install_omniverse_log_cleanup.sh`는 Isaac Sim/Omniverse Kit이 실행할 때마다 쌓는 `~/.nvidia-omniverse/logs`를 자동으로 정리합니다. `02_install_dev_stack.sh`의 Isaac Sim 설치 직후 실행됩니다.
+    - `~/.local/bin/omniverse-log-cleanup.sh`를 배포하고, systemd 사용자 타이머(`omniverse-log-cleanup.timer`)로 부팅 5분 후와 매일 1회 실행합니다.
+    - `LOG_MAX_AGE_DAYS`(기본 7)일보다 오래된 로그 파일을 삭제하고, 그래도 `LOG_MAX_SIZE_MB`(기본 2048)MB를 넘으면 오래된 파일부터 지웁니다. 최근 60분 안에 수정된 파일은 실행 중인 세션의 로그일 수 있어 크기 정리에서 제외합니다.
+    - 값을 바꾸려면 `LOG_MAX_AGE_DAYS=3 LOG_MAX_SIZE_MB=1024 bash install/install_omniverse_log_cleanup.sh`처럼 다시 실행하세요. 수동 정리는 `systemctl --user start omniverse-log-cleanup.service`, 기록은 `journalctl --user -u omniverse-log-cleanup.service`로 확인합니다.
   - `install_isaaclab.sh`는 기본적으로 Isaac Lab `v3.0.0-beta2`를 `~/IsaacLab`에 클론하고, `~/isaacsim`(Isaac Sim 6.0.1 설치 경로)를 `_isaac_sim`으로 심볼릭 링크한 뒤 `./isaaclab.sh --install`을 실행합니다. `ISAACLAB_VERSION`, `ISAACSIM_DIR`, `ISAACLAB_DIR` 환경 변수로 버전과 경로를 바꿀 수 있습니다. `install/install_isaacsim.sh`로 Isaac Sim을 먼저 설치해야 합니다.
   - `copy_files.sh`는 `desktop/` 폴더의 바로가기 파일 중 `htop.desktop`과 `nvidia-smi.desktop`을 `~/.config/autostart`에 복사하고, 나머지는 `~/Desktop`에 복사합니다.
   - 바로가기 복사 후 사용자별 기본 설정과 무관하게 Greybird/elementary-xfce 테마, Xubuntu 기본 배경화면, 단일 하단 패널을 구성합니다. 배경화면은 `/etc/xdg/xdg-xubuntu/xfce4/xfconf/xfce-perchannel-xml/xfce4-desktop.xml`(`xubuntu-default-settings`가 설치한 시스템 기본값, `xfce` 세션에서는 안 보이고 `xubuntu` 세션에서만 XDG_CONFIG_DIRS에 잡히는 경로라 `/etc/xdg/xfce4/...`도 폴백으로 확인)에서 실제 경로를 읽어와, 현재 세션에 존재하는 모든 모니터의 `last-image` 속성에 그대로 적용합니다.
