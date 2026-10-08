@@ -57,6 +57,32 @@ ROS 2 Lyrical은 Ubuntu 26.04를 공식 지원하지만, 현재 Isaac Sim의 공
   - `install/install_isaaclab.sh`를 호출해 Isaac Lab을 설치합니다.
   - 설치 확인을 위해 `create_empty.py` 튜토리얼을 headless로 30초간 실행합니다(무한 루프 스크립트라 `timeout`으로 강제 종료하며, 이는 정상 동작입니다).
 
+- `04_install_monitoring.sh`
+  - 중앙 모니터링 서버(krinfra, 192.168.101.218)가 이 워크스테이션을 수집할 수 있게 모니터링 에이전트를 설치합니다. 수집 대상은 CPU, RAM, 디스크, 네트워크, SMART, **NVIDIA GPU**, Sunshine 상태입니다. `02_install_dev_stack.sh`(Docker + NVIDIA Container Toolkit) 이후에 실행합니다.
+  - **모니터링 대상 PC는 모두 NVIDIA GPU를 갖고 있다는 전제입니다.** `lspci`에서 NVIDIA GPU가 보이지 않거나 `nvidia-smi`가 동작하지 않으면 아무것도 설치하지 않고 중단합니다.
+  - NVIDIA 드라이버, CUDA, Isaac Sim, Sunshine 설정은 변경하지 않습니다. Docker 재시작, `apt upgrade`, 재부팅도 하지 않습니다. 여러 번 실행해도 안전합니다.
+  - 순서: GPU 확인 → `install/install_node_exporter.sh` → `install/install_gpu_exporter.sh` → `install/install_sunshine_metrics.sh` → 방화벽 확인 → `install/verify_monitoring.sh`
+  - UFW가 켜져 있을 때만 중앙 서버 IP에서 오는 9100과 GPU exporter 포트를 허용할지 묻습니다(기본 N). 중앙 서버 IP는 `MONITORING_SERVER_IP`로 바꿀 수 있습니다.
+  - 마지막에 출력되는 **"중앙 서버 관리자에게 전달할 등록 정보"**(Ansible 인벤토리 예시)를 관리자에게 전달하면 Prometheus/Grafana에 등록됩니다. 워크스테이션 호스트명은 PC마다 겹칠 수 있어(`krinfra`, `mkt` 등) 중앙에서는 별칭과 IP로 구분합니다.
+  - `install/install_node_exporter.sh`: Ubuntu 패키지 `prometheus-node-exporter`(9100)와 `prometheus-node-exporter-collectors`(SMART/NVMe/apt textfile), `smartmontools`를 설치합니다. 이미 동작 중인 Node Exporter(패키지 또는 바이너리)가 있으면 그대로 둡니다.
+  - `install/install_gpu_exporter.sh`: `GPU_EXPORTER=auto`(기본) | `dcgm` | `nvidia_smi`
+    - auto: Docker NVIDIA 런타임이 있으면 NVIDIA DCGM Exporter 컨테이너(`krinfra-dcgm-exporter`, 9400/tcp, `nvcr.io/nvidia/k8s/dcgm-exporter:4.6.1-4.8.4`)를 실행합니다. GPU 사용률/VRAM/온도/전력 필수 메트릭이 나오는지 확인하고, 실패하면 컨테이너를 지우고 `nvidia_gpu_exporter` 1.15.1 deb(9835/tcp, SHA-256 검증)로 전환합니다.
+    - 이미 `nv-hostengine`(DCGM)을 쓰는 PC이거나 Docker NVIDIA 런타임이 없으면 바로 nvidia_smi 방식을 씁니다. Container Toolkit은 설치하지 않습니다.
+    - 결과(방식, 포트)는 `/etc/krinfra-monitoring.env`에 기록합니다. 이미 정상 동작 중이면 건너뛰며, 다시 설치하려면 `FORCE=1`을 지정합니다.
+    - **nvidia_smi → DCGM 전환** (DCGM 권장): 먼저 `sudo docker info --format '{{json .Runtimes}}' | grep -o nvidia`로 Docker NVIDIA 런타임을 확인합니다. 없으면 `bash install/install_nvidia_container_toolkit.sh`를 실행합니다. **이 스크립트는 Docker를 재시작하므로 실행 중인 컨테이너가 멈춥니다.** 그다음 `bash 04_install_monitoring.sh`(또는 `bash install/install_gpu_exporter.sh`)를 다시 실행하면, auto 모드가 nvidia_smi 사용 중인 것을 감지하고 DCGM 전환을 시도합니다. DCGM 검증에 성공하면 기존 nvidia_gpu_exporter는 자동으로 제거되고, 실패하면 그대로 남습니다. 전환 후에는 중앙 서버 관리자에게 알려 인벤토리의 `gpu_exporter_type`을 `dcgm`으로 바꾸도록 합니다.
+    - 드라이버를 업데이트한 뒤 재부팅하지 않으면 NVML 버전 불일치로 `nvidia-smi`와 exporter가 모두 실패합니다. 드라이버 변경 후에는 재부팅하세요.
+  - `install/install_sunshine_metrics.sh`: 30초마다 Sunshine 프로세스 실행 여부, 47989/tcp LISTEN 여부, 사용자 서비스(`app-dev.lizardbyte.app.Sunshine`) 상태를 Node Exporter textfile(`sunshine.prom`)로 기록합니다(`krinfra-sunshine-metrics.timer`). Sunshine을 재시작하거나 설정을 바꾸지 않으며, Moonlight 세션 연결 여부는 수집하지 않습니다.
+  - `install/verify_monitoring.sh [IP]`: 인자 없이 실행하면 이 PC를 점검하고(서비스, UFW 포함), IP를 주면 다른 PC(예: 중앙 서버)에서 원격으로 점검합니다(HTTP만). Node 또는 GPU가 실패하면 종료 코드 1을 반환합니다.
+  - 제거:
+    ```bash
+    sudo systemctl disable --now krinfra-sunshine-metrics.timer
+    sudo rm /etc/systemd/system/krinfra-sunshine-metrics.{service,timer} /usr/local/lib/krinfra/sunshine_metrics.sh
+    sudo docker rm -f krinfra-dcgm-exporter        # DCGM 방식
+    sudo apt-get remove nvidia-gpu-exporter         # nvidia_smi 방식
+    sudo apt-get remove prometheus-node-exporter prometheus-node-exporter-collectors
+    sudo rm -f /etc/krinfra-monitoring.env && sudo systemctl daemon-reload
+    ```
+
 - `install/`
   - 개별 설치 스크립트가 들어 있습니다.
   - `install_desktop.sh`는 Xfce Desktop 패키지(`xubuntu-default-settings` 포함)를 설치하고, LightDM을 기본 디스플레이 매니저로 지정한 뒤(GDM 등 다른 디스플레이 매니저를 쓰고 있었다면 LightDM으로 전환) `/etc/lightdm/lightdm.conf.d/50-autologin.conf`에 현재 사용자로 자동 로그인(`user-session=xubuntu`)하도록 설정합니다. 부팅 시 기대하는 흐름은 `LightDM → 자동 로그인 → Xubuntu 세션 → Sunshine 사용자 서비스 시작 → Moonlight 접속 가능`입니다.
@@ -142,6 +168,7 @@ Ubuntu 22.04/24.04에서 전체 스택을 설치하는 순서입니다.
 3. `02_install_dev_stack.sh`를 실행합니다.
 4. 전체 설치가 끝나면 다시 재부팅합니다.
 5. (선택) Isaac Lab이 필요하면 `03_install_isaac_lab.sh`를 실행합니다.
+6. 중앙 모니터링(krinfra)에 연결하려면 `04_install_monitoring.sh`를 실행하고, 출력된 등록 정보를 관리자에게 전달합니다.
 
 ## 실행 방법
 
@@ -151,7 +178,10 @@ Ubuntu 22.04/24.04에서 전체 스택을 설치하는 순서입니다.
 bash 01_install_base.sh
 bash 02_install_dev_stack.sh
 bash 03_install_isaac_lab.sh
+bash 04_install_monitoring.sh
 ```
+
+이미 세팅된 PC를 모니터링에 연결할 때는 `git pull` 후 `bash 04_install_monitoring.sh`만 실행하면 됩니다.
 
 Isaac Lab 버전이나 설치 경로를 바꾸고 싶으면 다음처럼 지정할 수 있습니다.
 
@@ -202,6 +232,7 @@ Ubuntu Setting/
 ├── 01_install_base.sh
 ├── 02_install_dev_stack.sh
 ├── 03_install_isaac_lab.sh
+├── 04_install_monitoring.sh
 ├── desktop/
 │   ├── code.desktop
 │   ├── google-chrome.desktop
@@ -215,13 +246,17 @@ Ubuntu Setting/
 │   ├── configure_xfce_panel.sh
 │   ├── install_chrome.sh
 │   ├── install_desktop.sh
+│   ├── install_gpu_exporter.sh
 │   ├── install_isaaclab.sh
 │   ├── install_isaacsim.sh
+│   ├── install_node_exporter.sh
 │   ├── install_nvidia_container_toolkit.sh
 │   ├── install_ros2.sh
 │   ├── install_sunshine.sh
+│   ├── install_sunshine_metrics.sh
 │   ├── install_vscode.sh
 │   ├── set-cpu-performance.sh
+│   ├── verify_monitoring.sh
 │   └── legacy/
 │       ├── install_xrdp.sh
 │       ├── install_nm.sh
