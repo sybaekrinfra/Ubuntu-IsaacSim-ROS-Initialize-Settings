@@ -27,9 +27,14 @@ NGE_URL="https://github.com/utkuozdemir/nvidia_gpu_exporter/releases/download/v$
 NGE_SHA256="0dc8c2756c6853ec7e6a7c404b229d8f764443bef89f33e13b3c4278b309acd4"   # 공식 checksums.txt 값
 NGE_PORT=9835
 STATE_FILE="${KRINFRA_STATE_FILE:-/etc/krinfra-monitoring.env}"   # 테스트 시에만 변경
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+DCGM_COUNTERS_SRC="${SCRIPT_DIR}/dcgm-counters.csv"            # 기본 항목 + 전력 제한/스로틀링
+DCGM_COUNTERS_DST="${KRINFRA_DCGM_COUNTERS:-/etc/krinfra/dcgm-counters.csv}"
 
 # GeForce/RTX Pro 모두에서 NVML로 제공되는 기본 필드 (프로파일링 DCGM_FI_PROF_* 는 사용하지 않음)
 DCGM_REQUIRED="DCGM_FI_DEV_GPU_UTIL DCGM_FI_DEV_FB_USED DCGM_FI_DEV_FB_FREE DCGM_FI_DEV_GPU_TEMP DCGM_FI_DEV_POWER_USAGE"
+# 수집 항목 파일이 적용됐는지 판단하는 항목 (장치가 지원하지 않으면 경고만)
+DCGM_EXPECTED="DCGM_FI_DEV_ENFORCED_POWER_LIMIT"
 NGE_REQUIRED="nvidia_smi_utilization_gpu_ratio nvidia_smi_memory_used_bytes nvidia_smi_memory_total_bytes nvidia_smi_temperature_gpu nvidia_smi_power_draw_watts"
 
 missing_metrics() {   # $1=port, $2=필수 메트릭 목록 → 누락된 이름 출력 (응답 없음이면 "NO_RESPONSE")
@@ -84,6 +89,7 @@ install_dcgm() {
         echo "  - ${DCGM_PORT}/tcp 포트를 다른 프로세스가 사용 중입니다." >&2
         return 1
     fi
+    sudo install -D -m 644 "${DCGM_COUNTERS_SRC}" "${DCGM_COUNTERS_DST}"
     if ! sudo docker pull -q "${DCGM_EXPORTER_IMAGE}" >/dev/null; then
         echo "  - DCGM 이미지 다운로드 실패: ${DCGM_EXPORTER_IMAGE}" >&2
         echo "    nvcr.io 접근(DNS/프록시/방화벽) 확인: sudo docker pull ${DCGM_EXPORTER_IMAGE}" >&2
@@ -98,10 +104,17 @@ install_dcgm() {
         --cap-add SYS_ADMIN \
         --memory 512m \
         --log-opt max-size=10m --log-opt max-file=3 \
+        -v "${DCGM_COUNTERS_DST}:/etc/dcgm-exporter/krinfra-counters.csv:ro" \
+        -e DCGM_EXPORTER_COLLECTORS=/etc/dcgm-exporter/krinfra-counters.csv \
         -p "${DCGM_PORT}:9400" \
         "${DCGM_EXPORTER_IMAGE}" >/dev/null || { echo "  - DCGM 컨테이너 실행 실패 (위 docker 오류 참고)" >&2; return 1; }
     echo "  - 필수 메트릭 확인 중 (최대 90초)"
     if wait_metrics "${DCGM_PORT}" "${DCGM_REQUIRED}" 90; then
+        if [ -n "$(missing_metrics "${DCGM_PORT}" "${DCGM_EXPECTED}")" ]; then
+            echo "  - 참고: 이 GPU/드라이버는 전력 제한 필드(${DCGM_EXPECTED})를 제공하지 않습니다(전력 사용량/전력량은 정상 수집)."
+        else
+            echo "  - 전력 제한 메트릭 확인 (${DCGM_EXPECTED})"
+        fi
         write_state dcgm "${DCGM_PORT}"
         remove_nvidia_smi_exporter
         return 0
@@ -146,9 +159,13 @@ nvidia-smi --query-gpu=index,name,driver_version,memory.total --format=csv,nohea
 echo "[2/4] 기존 GPU Exporter 확인"
 if [ "${FORCE}" != "1" ]; then
     if [ -z "$(missing_metrics "${DCGM_PORT}" "${DCGM_REQUIRED}")" ]; then
-        echo "  - DCGM Exporter가 이미 정상 동작 중입니다(${DCGM_PORT}). 건너뜁니다. (재설치: FORCE=1)"
-        write_state dcgm "${DCGM_PORT}"
-        exit 0
+        if sudo cmp -s "${DCGM_COUNTERS_SRC}" "${DCGM_COUNTERS_DST}" 2>/dev/null; then
+            echo "  - DCGM Exporter가 이미 정상 동작 중입니다(${DCGM_PORT}). 건너뜁니다. (재설치: FORCE=1)"
+            write_state dcgm "${DCGM_PORT}"
+            exit 0
+        fi
+        echo "  - DCGM Exporter 동작 중이지만 수집 항목(dcgm-counters.csv)이 갱신되어 컨테이너를 다시 만듭니다."
+        RECREATE_DCGM=1
     fi
     if [ -z "$(missing_metrics "${NGE_PORT}" "${NGE_REQUIRED}")" ]; then
         # nvidia_smi 는 대안일 뿐이므로, auto/dcgm 에서 DCGM 조건이 갖춰졌으면 전환을 시도한다(실패 시 기존 유지).
@@ -170,7 +187,7 @@ if [ "${FORCE}" != "1" ]; then
         fi
     fi
 fi
-[ "${UPGRADE_FROM_NVIDIA_SMI:-0}" = 1 ] || echo "  - 동작 중인 GPU Exporter 없음"
+[ "${UPGRADE_FROM_NVIDIA_SMI:-0}" = 1 ] || [ "${RECREATE_DCGM:-0}" = 1 ] || echo "  - 동작 중인 GPU Exporter 없음"
 
 echo "[3/4] 설치 방식 결정"
 method="${GPU_EXPORTER}"

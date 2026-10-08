@@ -68,6 +68,10 @@ ROS 2 Lyrical은 Ubuntu 26.04를 공식 지원하지만, 현재 Isaac Sim의 공
   - `install/install_gpu_exporter.sh`: `GPU_EXPORTER=auto`(기본) | `dcgm` | `nvidia_smi`
     - auto: Docker NVIDIA 런타임이 있으면 NVIDIA DCGM Exporter 컨테이너(`krinfra-dcgm-exporter`, 9400/tcp, `nvcr.io/nvidia/k8s/dcgm-exporter:4.6.1-4.8.4`)를 실행합니다. GPU 사용률/VRAM/온도/전력 필수 메트릭이 나오는지 확인하고, 실패하면 컨테이너를 지우고 `nvidia_gpu_exporter` 1.15.1 deb(9835/tcp, SHA-256 검증)로 전환합니다.
     - 이미 `nv-hostengine`(DCGM)을 쓰는 PC이거나 Docker NVIDIA 런타임이 없으면 바로 nvidia_smi 방식을 씁니다. Container Toolkit은 설치하지 않습니다.
+    - DCGM 수집 항목은 `install/dcgm-counters.csv`입니다. 이미지 기본 항목에 **전력 제한**(`DCGM_FI_DEV_ENFORCED_POWER_LIMIT`, `DCGM_FI_DEV_POWER_MGMT_LIMIT`)과 **전력 제한으로 인한 스로틀링 시간**(`DCGM_FI_DEV_POWER_VIOLATION`)을 더한 파일입니다.
+      - 이 파일은 `/etc/krinfra/dcgm-counters.csv`에 설치되고 컨테이너에 마운트됩니다.
+      - 누적 전력량(`DCGM_FI_DEV_TOTAL_ENERGY_CONSUMPTION`)은 기본 항목에 포함되어 있습니다.
+      - 이 파일이 바뀐 뒤 스크립트를 다시 실행하면, 동작 중인 DCGM 컨테이너를 새 항목으로 다시 만듭니다.
     - 결과(방식, 포트)는 `/etc/krinfra-monitoring.env`에 기록합니다. 이미 정상 동작 중이면 건너뛰며, 다시 설치하려면 `FORCE=1`을 지정합니다.
     - **nvidia_smi → DCGM 전환** (DCGM 권장): 먼저 `sudo docker info --format '{{json .Runtimes}}' | grep -o nvidia`로 Docker NVIDIA 런타임을 확인합니다. 없으면 `bash install/install_nvidia_container_toolkit.sh`를 실행합니다. **이 스크립트는 Docker를 재시작하므로 실행 중인 컨테이너가 멈춥니다.** 그다음 `bash 04_install_monitoring.sh`(또는 `bash install/install_gpu_exporter.sh`)를 다시 실행하면, auto 모드가 nvidia_smi 사용 중인 것을 감지하고 DCGM 전환을 시도합니다. DCGM 검증에 성공하면 기존 nvidia_gpu_exporter는 자동으로 제거되고, 실패하면 그대로 남습니다. 전환 후에는 중앙 서버 관리자에게 알려 인벤토리의 `gpu_exporter_type`을 `dcgm`으로 바꾸도록 합니다.
     - 드라이버를 업데이트한 뒤 재부팅하지 않으면 NVML 버전 불일치로 `nvidia-smi`와 exporter가 모두 실패합니다. 드라이버 변경 후에는 재부팅하세요.
@@ -244,6 +248,7 @@ Ubuntu Setting/
 ├── install/
 │   ├── copy_files.sh
 │   ├── configure_xfce_panel.sh
+│   ├── dcgm-counters.csv
 │   ├── install_chrome.sh
 │   ├── install_desktop.sh
 │   ├── install_gpu_exporter.sh
