@@ -90,10 +90,12 @@ else
     add_info nvidia_kernel_module none
 fi
 
-if command -v nvcc >/dev/null 2>&1; then
-    add_info cuda_toolkit "$(nvcc --version | sed -n 's/.*release \([0-9.]*\).*/\1/p')"
+# CUDA Toolkit (실제 설치본). root PATH 에는 /usr/local/cuda/bin 이 없으므로 경로도 직접 확인한다.
+nvcc_bin="$(command -v nvcc 2>/dev/null || true)"; [ -z "$nvcc_bin" ] && [ -x /usr/local/cuda/bin/nvcc ] && nvcc_bin=/usr/local/cuda/bin/nvcc
+if [ -n "$nvcc_bin" ]; then
+    add_info cuda_toolkit "$("$nvcc_bin" --version 2>/dev/null | sed -n 's/.*release \([0-9.]*\).*/\1/p')"
 elif [ -r /usr/local/cuda/version.json ]; then
-    add_info cuda_toolkit "$(sed -n 's/.*"cuda" *: *{[^}]*"version" *: *"\([^"]*\)".*/\1/p' /usr/local/cuda/version.json | head -1)"
+    add_info cuda_toolkit "$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["cuda"]["version"])' /usr/local/cuda/version.json 2>/dev/null)"
 else
     add_info cuda_toolkit none
 fi
@@ -111,7 +113,9 @@ else
 fi
 
 # 설치된 최신 커널용 NVIDIA 모듈 존재 여부 (재부팅 후 드라이버 로드 실패 위험)
-latest_kernel="$(ls /lib/modules 2>/dev/null | sort -V | tail -1)"
+# 실제로 부팅 가능한 커널 목록은 /boot/vmlinuz-* 기준 (/lib/modules 에는 커널이 아닌 디렉터리가 있을 수 있음)
+latest_kernel="$(ls /boot/vmlinuz-* 2>/dev/null | sed 's|^/boot/vmlinuz-||' | grep -E '^[0-9]+\.[0-9]+' | sort -V | tail -1)"
+[ -z "$latest_kernel" ] && latest_kernel="$(uname -r)"
 mod_ok=0; modinfo -k "$latest_kernel" nvidia >/dev/null 2>&1 && mod_ok=1
 reboot_pending=0; [ "$latest_kernel" != "$(uname -r)" ] && reboot_pending=1
 
