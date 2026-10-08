@@ -101,9 +101,14 @@ cat > "${APPS_FILE}" <<'EOF'
 EOF
 
 echo "[7/9] 웹 UI 로그인 자격증명 설정"
-WEBUI_PASSWORD="1"
+# 웹 UI(47990)는 기본적으로 사내망(LAN) 전체에서 접근 가능하고, 로그인하면 페어링·설정·앱 명령 실행이 가능하다.
+# 그래서 고정된 약한 비밀번호 대신 무작위 비밀번호를 만든다. 원하는 값을 쓰려면 SUNSHINE_WEBUI_PASSWORD 를 지정한다.
+# 비밀번호는 ~/.config/sunshine/webui-credentials(권한 600)에만 저장하고 화면·로그·Git에는 출력하지 않는다.
+WEBUI_PASSWORD="${SUNSHINE_WEBUI_PASSWORD:-$(tr -dc 'A-Za-z0-9' </dev/urandom | head -c 16)}"
 sunshine --creds "${USER}" "${WEBUI_PASSWORD}"
-echo "  - 웹 UI 아이디: ${USER} / 비밀번호: ${WEBUI_PASSWORD} (매우 단순한 비밀번호입니다. 필요하면 웹 UI에서 나중에 바꾸세요.)"
+CRED_FILE="${CONFIG_DIR}/webui-credentials"
+( umask 077; printf 'user=%s\npassword=%s\n' "${USER}" "${WEBUI_PASSWORD}" > "${CRED_FILE}" )
+echo "  - 웹 UI 아이디: ${USER} / 비밀번호: ${CRED_FILE} 에 저장 (권한 600)"
 
 echo "[8/9] 중복 override 정리 및 XFCE autostart로 자동 시작 설정"
 SUNSHINE_UNIT="app-dev.lizardbyte.app.Sunshine.service"
@@ -157,7 +162,8 @@ systemctl --user restart "${SUNSHINE_UNIT}"
 
 echo "Sunshine 설치 완료"
 echo "input 그룹 적용을 위해 로그아웃 후 다시 로그인하세요."
-echo "웹 UI 로그인 아이디/비밀번호: ${USER} / ${WEBUI_PASSWORD}"
+echo "웹 UI 로그인 아이디: ${USER}, 비밀번호: cat ${CRED_FILE}"
+echo "  (비밀번호를 바꾸면 웹 UI에서 변경하고 ${CRED_FILE}도 함께 갱신하거나 삭제하세요.)"
 if [ -n "${LOCAL_IP}" ]; then
     echo "웹 UI: https://${LOCAL_IP}:47990"
 else

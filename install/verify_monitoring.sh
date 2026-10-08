@@ -68,9 +68,20 @@ else
     echo "         (Moonlight 세션 연결 여부는 수집하지 않습니다)"
 fi
 
+echo "[3+/4] 시스템 기준 정보 / 원격 GUI 위험"
+if grep -q '^krinfra_software_info' <<<"${node}"; then
+    sed -n 's/^krinfra_software_info{component="\([^"]*\)",version="\([^"]*\)"} 1$/\1=\2/p' <<<"${node}" | paste -sd' ' - | fold -s -w 110 | sed 's/^/         /'
+    [ "$(val krinfra_nvidia_smi_ok "${node}")" = "1" ] && ok "nvidia-smi 정상" || bad "nvidia-smi 실패 (드라이버/NVML 불일치 가능 — 재부팅 필요 여부 확인)"
+    [ "$(val 'krinfra_nvidia_module_for_latest_kernel{' "${node}")" = "1" ] && ok "최신 설치 커널용 NVIDIA 모듈 있음" || warn "최신 설치 커널용 NVIDIA 모듈 없음 → 이대로 재부팅하면 GPU 드라이버가 로드되지 않을 수 있음"
+    [ "$(val krinfra_kernel_reboot_pending "${node}")" = "1" ] && warn "새 커널 설치됨, 재부팅 대기 중"
+    [ "$(val 'krinfra_gui_session_active{' "${node}")" = "1" ] && ok "X11 그래픽 세션 활성 (LightDM 자동 로그인)" || warn "활성 X11 그래픽 세션 없음 → Sunshine 화면 캡처 불가 가능"
+else
+    warn "system_info 메트릭 없음 (install/install_system_info_metrics.sh 미설치)"
+fi
+
 echo "[4/4] 로컬 서비스 / 방화벽"
 if [ "${LOCAL}" = 1 ]; then
-    for u in prometheus-node-exporter.service node_exporter.service nvidia_gpu_exporter.service krinfra-sunshine-metrics.timer; do
+    for u in prometheus-node-exporter.service node_exporter.service nvidia_gpu_exporter.service krinfra-sunshine-metrics.timer krinfra-system-info.timer; do
         st="$(systemctl is-active "$u" 2>/dev/null)"
         [ "${st}" = "active" ] && ok "$u active"
     done

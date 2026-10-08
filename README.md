@@ -61,7 +61,7 @@ ROS 2 Lyrical은 Ubuntu 26.04를 공식 지원하지만, 현재 Isaac Sim의 공
   - 중앙 모니터링 서버(krinfra, 192.168.101.218)가 이 워크스테이션을 수집할 수 있게 모니터링 에이전트를 설치합니다. 수집 대상은 CPU, RAM, 디스크, 네트워크, SMART, **NVIDIA GPU**, Sunshine 상태입니다. `02_install_dev_stack.sh`(Docker + NVIDIA Container Toolkit) 이후에 실행합니다.
   - **모니터링 대상 PC는 모두 NVIDIA GPU를 갖고 있다는 전제입니다.** `lspci`에서 NVIDIA GPU가 보이지 않거나 `nvidia-smi`가 동작하지 않으면 아무것도 설치하지 않고 중단합니다.
   - NVIDIA 드라이버, CUDA, Isaac Sim, Sunshine 설정은 변경하지 않습니다. Docker 재시작, `apt upgrade`, 재부팅도 하지 않습니다. 여러 번 실행해도 안전합니다.
-  - 순서: GPU 확인 → `install/install_node_exporter.sh` → `install/install_gpu_exporter.sh` → `install/install_sunshine_metrics.sh` → 방화벽 확인 → `install/verify_monitoring.sh`
+  - 순서: GPU 확인 → `install/install_node_exporter.sh` → `install/install_gpu_exporter.sh` → `install/install_sunshine_metrics.sh` → `install/install_system_info_metrics.sh` → 방화벽 확인 → `install/verify_monitoring.sh`
   - UFW가 켜져 있을 때만 중앙 서버 IP에서 오는 9100과 GPU exporter 포트를 허용할지 묻습니다(기본 N). 중앙 서버 IP는 `MONITORING_SERVER_IP`로 바꿀 수 있습니다.
   - 마지막에 출력되는 **"중앙 서버 관리자에게 전달할 등록 정보"**(Ansible 인벤토리 예시)를 관리자에게 전달하면 Prometheus/Grafana에 등록됩니다. 워크스테이션 호스트명은 PC마다 겹칠 수 있어(`krinfra`, `mkt` 등) 중앙에서는 별칭과 IP로 구분합니다.
   - `install/install_node_exporter.sh`: Ubuntu 패키지 `prometheus-node-exporter`(9100)와 `prometheus-node-exporter-collectors`(SMART/NVMe/apt textfile), `smartmontools`를 설치합니다. 이미 동작 중인 Node Exporter(패키지 또는 바이너리)가 있으면 그대로 둡니다.
@@ -76,11 +76,25 @@ ROS 2 Lyrical은 Ubuntu 26.04를 공식 지원하지만, 현재 Isaac Sim의 공
     - **nvidia_smi → DCGM 전환** (DCGM 권장): 먼저 `sudo docker info --format '{{json .Runtimes}}' | grep -o nvidia`로 Docker NVIDIA 런타임을 확인합니다. 없으면 `bash install/install_nvidia_container_toolkit.sh`를 실행합니다. **이 스크립트는 Docker를 재시작하므로 실행 중인 컨테이너가 멈춥니다.** 그다음 `bash 04_install_monitoring.sh`(또는 `bash install/install_gpu_exporter.sh`)를 다시 실행하면, auto 모드가 nvidia_smi 사용 중인 것을 감지하고 DCGM 전환을 시도합니다. DCGM 검증에 성공하면 기존 nvidia_gpu_exporter는 자동으로 제거되고, 실패하면 그대로 남습니다. 전환 후에는 중앙 서버 관리자에게 알려 인벤토리의 `gpu_exporter_type`을 `dcgm`으로 바꾸도록 합니다.
     - 드라이버를 업데이트한 뒤 재부팅하지 않으면 NVML 버전 불일치로 `nvidia-smi`와 exporter가 모두 실패합니다. 드라이버 변경 후에는 재부팅하세요.
   - `install/install_sunshine_metrics.sh`: 30초마다 Sunshine 프로세스 실행 여부, 47989/tcp LISTEN 여부, 사용자 서비스(`app-dev.lizardbyte.app.Sunshine`) 상태를 Node Exporter textfile(`sunshine.prom`)로 기록합니다(`krinfra-sunshine-metrics.timer`). Sunshine을 재시작하거나 설정을 바꾸지 않으며, Moonlight 세션 연결 여부는 수집하지 않습니다.
+  - `install/install_system_info_metrics.sh`: 10분마다 기준 정보와 위험 지표를 Node Exporter textfile(`system_info.prom`)로 기록합니다(`krinfra-system-info.timer`).
+    - 기준 정보: OS, 커널, NVIDIA 드라이버, `nvidia-smi`의 CUDA Version, 실제 설치된 CUDA Toolkit(`nvcc`, 없으면 none), Isaac Sim/Isaac Lab(설치 폴더의 `VERSION` 파일), ROS 2, Sunshine, Docker, NVIDIA Container Toolkit, DCGM Exporter 이미지
+    - `nvidia-smi`의 CUDA Version은 드라이버가 지원하는 최대 CUDA API 버전이고, 설치된 CUDA Toolkit 버전과는 다릅니다. 그래서 두 값을 따로 기록합니다.
+    - `nvidia_kernel_module`(open/proprietary)도 기록합니다. **RTX 50 시리즈(Blackwell, RTX 5070 Ti 포함)는 오픈 커널 모듈(`nvidia-driver-XXX-open`)만 지원합니다.** 기존 GPU를 5070 Ti로 교체하기 전에 이 값이 `open`인지 확인하세요. `proprietary`이면 교체 후 GPU가 인식되지 않을 수 있습니다.
+    - 위험 지표:
+      - `nvidia-smi` 동작 여부
+      - **설치된 최신 커널용 NVIDIA 모듈 존재 여부**: 커널 업데이트 후 재부팅하면 GPU 드라이버가 로드되지 않을 위험을 재부팅 전에 미리 탐지합니다
+      - 재부팅 대기 여부
+      - 대상 사용자의 활성 X11 그래픽 세션: LightDM 자동 로그인이나 Xfce 세션 실패를 탐지합니다
+      - GPU 디스플레이 활성 여부
+    - 중앙 서버가 이 값을 매일 저장해 장비별 변경 이력(드라이버, 커널, Isaac Sim 업데이트 등)을 남깁니다. 개발자의 프로젝트, 소스 코드, 데이터는 읽지 않습니다.
+    - 대상 사용자와 경로가 다르면 `TARGET_USER`, `ISAACSIM_DIR`, `ISAACLAB_DIR`로 지정합니다.
   - `install/verify_monitoring.sh [IP]`: 인자 없이 실행하면 이 PC를 점검하고(서비스, UFW 포함), IP를 주면 다른 PC(예: 중앙 서버)에서 원격으로 점검합니다(HTTP만). Node 또는 GPU가 실패하면 종료 코드 1을 반환합니다.
   - 제거:
     ```bash
     sudo systemctl disable --now krinfra-sunshine-metrics.timer
     sudo rm /etc/systemd/system/krinfra-sunshine-metrics.{service,timer} /usr/local/lib/krinfra/sunshine_metrics.sh
+    sudo systemctl disable --now krinfra-system-info.timer
+    sudo rm /etc/systemd/system/krinfra-system-info.{service,timer} /usr/local/lib/krinfra/system_info_metrics.sh
     sudo docker rm -f krinfra-dcgm-exporter        # DCGM 방식
     sudo apt-get remove nvidia-gpu-exporter         # nvidia_smi 방식
     sudo apt-get remove prometheus-node-exporter prometheus-node-exporter-collectors
@@ -102,7 +116,9 @@ ROS 2 Lyrical은 Ubuntu 26.04를 공식 지원하지만, 현재 Isaac Sim의 공
     - 로컬 IP를 감지할 수 있으면 `csrf_allowed_origins = https://<감지된 IP>:47990`을 설정합니다.
     - `~/.local/bin/sunshine-disable-mouse-accel.sh` 훅 스크립트를 배포하고, `global_prep_cmd`에 등록해 매 세션 시작마다 백그라운드로 실행되게 합니다. 이 훅은 Sunshine이 생성하는 가상 마우스 장치(이름에 `sunshine`이 포함된 libinput 장치)를 찾아 `libinput Accel Profile Enabled`를 flat으로, `libinput Accel Speed`를 -1로 설정해 호스트 X11의 pointer acceleration을 꺼줍니다. 가상 장치는 세션마다 새로 생성되므로 접속할 때마다 자동으로 재적용됩니다.
     - `~/.config/sunshine/apps.json`을 Desktop 항목 하나만 남긴 내용으로 덮어씁니다(Low Res Desktop/Steam Big Picture 제거). 재설치·재실행 시 매번 이 상태로 리셋됩니다.
-    - `sunshine --creds`로 웹 UI 로그인 아이디/비밀번호를 `<사용자 이름> / 1`로 자동 설정합니다. 비밀번호가 매우 단순하니 필요하면 웹 UI에서 바꾸세요.
+    - `sunshine --creds`로 웹 UI 로그인 아이디를 `<사용자 이름>`으로, 비밀번호를 **무작위 16자**로 설정합니다. 비밀번호는 `~/.config/sunshine/webui-credentials`(권한 600)에 저장되며 화면·로그에는 출력하지 않습니다. 정해진 값을 쓰려면 `SUNSHINE_WEBUI_PASSWORD=<값> bash install/install_sunshine.sh`로 실행합니다.
+      - 이유: 웹 UI(47990)는 기본 설정에서 사내망 전체에서 접속할 수 있고, 로그인하면 클라이언트 페어링, 설정 변경, 앱 명령 등록·실행이 가능합니다. 예전 기본값(`1`)은 같은 망의 누구나 그 PC의 사용자 권한으로 명령을 실행할 수 있는 위험이 있습니다.
+      - **기존 PC 점검**(그 PC에서 실행): `curl -sk -o /dev/null -w '%{http_code}\n' -u "$USER:1" https://localhost:47990/api/config`. 결과가 `200`이면 아직 예전 비밀번호이니, 웹 UI의 비밀번호 변경 메뉴에서 바꾸세요. 웹 UI에서 바꾸면 Sunshine을 재시작하지 않아 스트리밍이 끊기지 않습니다.
     - Sunshine 원본 systemd 유닛에는 이미 `ExecStartPre=/bin/sleep 5`, `Restart=on-failure`, `RestartSec=5`가 들어있습니다. 예전 버전의 이 스크립트가 만들어 둔, 그것과 완전히 중복되는 override(`~/.config/systemd/user/app-dev.lizardbyte.app.Sunshine.service.d/override.conf`)가 남아 있으면 제거하고, 다른 내용이 섞여 있으면 손대지 않습니다.
     - Xfce는 로그인해도 `graphical-session.target`을 활성화하지 않는 경우가 있어 `WantedBy=graphical-session.target`만으로는 서비스가 자동 시작되지 않을 수 있습니다. 이를 보완하기 위해 `~/.config/autostart/sunshine-systemd.desktop`을 만들어 Xfce 로그인 직후 `systemctl --user start app-dev.lizardbyte.app.Sunshine.service`를 명시적으로 실행합니다.
     - 설치 후 로그아웃/재로그인이 필요하며, 웹 UI는 `https://<감지된 IP 또는 localhost>:47990`입니다.
@@ -124,9 +140,9 @@ ROS 2 Lyrical은 Ubuntu 26.04를 공식 지원하지만, 현재 Isaac Sim의 공
 
 ## Sunshine 최초 접속 설정
 
-웹 UI 로그인 아이디/비밀번호는 `install_sunshine.sh`가 `<사용자 이름> / 1`로 자동 설정하지만, 클라이언트 페어링은 자동화되지 않습니다. 최초 1회는 직접 다음 순서로 진행해야 합니다.
+웹 UI 로그인 아이디/비밀번호는 `install_sunshine.sh`가 자동 설정합니다(아이디 `<사용자 이름>`, 비밀번호는 `cat ~/.config/sunshine/webui-credentials`). 클라이언트 페어링은 자동화되지 않습니다. 최초 1회는 직접 다음 순서로 진행해야 합니다.
 
-1. 호스트에서 웹 UI(`https://<호스트 IP>:47990`)에 접속해 `<사용자 이름> / 1`로 로그인합니다(필요하면 이 자리에서 비밀번호를 바꾸세요).
+1. 호스트에서 웹 UI(`https://<호스트 IP>:47990`)에 접속해 위 아이디/비밀번호로 로그인합니다.
 2. 접속하려는 클라이언트 쪽 Moonlight 앱에서 이 호스트로 접속을 시도합니다.
 3. Moonlight에 PIN 번호와 컴퓨터 이름이 표시되면, 방금 로그인한 Sunshine 웹 UI의 PIN 메뉴에서 그 PIN과 (원하는) 기기 이름을 입력해 페어링을 완료합니다. 이 기기 이름은 클라이언트를 구분하기 위한 참고용 라벨일 뿐이라 아무 값이나 입력해도 됩니다.
 
@@ -259,6 +275,7 @@ Ubuntu Setting/
 │   ├── install_ros2.sh
 │   ├── install_sunshine.sh
 │   ├── install_sunshine_metrics.sh
+│   ├── install_system_info_metrics.sh
 │   ├── install_vscode.sh
 │   ├── set-cpu-performance.sh
 │   ├── verify_monitoring.sh

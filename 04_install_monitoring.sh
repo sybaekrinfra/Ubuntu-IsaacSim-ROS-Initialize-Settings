@@ -11,6 +11,8 @@ set -e
 # - NVIDIA 드라이버, CUDA, Isaac Sim, Sunshine 설정은 변경하지 않습니다. Docker 재시작, apt upgrade, 재부팅도 하지 않습니다.
 # - 여러 번 실행해도 안전합니다(이미 동작 중인 항목은 건너뜁니다).
 # - 방화벽(UFW)이 켜져 있을 때만 규칙 추가 여부를 묻습니다(기본값: 추가하지 않음).
+# - 소프트웨어 버전(드라이버, 커널, CUDA, Isaac Sim/Lab, ROS 2, Sunshine, Docker)과 GUI 세션 상태, 재부팅 위험을 기록합니다.
+#   변경 이력은 중앙 서버가 보관합니다. 개발자의 프로젝트, 소스 코드, 데이터는 수집하지 않습니다.
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$script_dir"
@@ -25,7 +27,7 @@ fi
 echo "모니터링 에이전트 설치 시작 (중앙 서버: ${MONITORING_SERVER_IP})"
 sudo -v
 
-echo "[1/6] NVIDIA GPU 확인"
+echo "[1/7] NVIDIA GPU 확인"
 if ! lspci 2>/dev/null | grep -qi 'nvidia'; then
     echo "오류: NVIDIA GPU가 감지되지 않습니다. 모니터링 대상은 NVIDIA GPU 워크스테이션입니다." >&2
     exit 1
@@ -36,18 +38,21 @@ if ! nvidia-smi >/dev/null 2>&1; then
 fi
 nvidia-smi --query-gpu=name,driver_version --format=csv,noheader | sed 's/^/  - /'
 
-echo "[2/6] Node Exporter"
+echo "[2/7] Node Exporter"
 bash install/install_node_exporter.sh
 
-echo "[3/6] NVIDIA GPU Exporter"
+echo "[3/7] NVIDIA GPU Exporter"
 bash install/install_gpu_exporter.sh
 # shellcheck source=/dev/null
 . /etc/krinfra-monitoring.env
 
-echo "[4/6] Sunshine 상태 수집기"
+echo "[4/7] Sunshine 상태 수집기"
 bash install/install_sunshine_metrics.sh
 
-echo "[5/6] 방화벽 확인"
+echo "[5/7] 시스템 기준 정보 수집기 (드라이버/커널/CUDA/Isaac Sim 버전, GUI 세션, 재부팅 위험)"
+bash install/install_system_info_metrics.sh
+
+echo "[6/7] 방화벽 확인"
 if sudo ufw status 2>/dev/null | grep -q 'Status: active'; then
     echo "  - UFW가 활성화되어 있습니다. 중앙 서버(${MONITORING_SERVER_IP})에서 다음 포트에 접근해야 합니다:"
     echo "      9100/tcp (Node Exporter), ${GPU_EXPORTER_PORT}/tcp (GPU Exporter)"
@@ -71,7 +76,7 @@ else
     echo "  - UFW 비활성: 규칙 추가 불필요"
 fi
 
-echo "[6/6] 점검"
+echo "[7/7] 점검"
 bash install/verify_monitoring.sh || true
 
 echo ""
